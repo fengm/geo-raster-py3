@@ -9,22 +9,34 @@ import multiprocessing
 import queue, signal
 import logging
 
+def _default_task_pos():
+    import os
+    
+    _c = 'AWS_BATCH_JOB_ARRAY_INDEX'
+    if _c in os.environ:
+        return int(os.environ[_c])
+    
+    return 0
+
 def add_task_opts(p):
     p.add_argument('-in', '--instance-num', dest='instance_num', type=int, default=1)
-    p.add_argument('-ip', '--instance-pos', dest='instance_pos', type=int, default=0)
+    p.add_argument('-ip', '--instance-pos', dest='instance_pos', type=int, default=_default_task_pos())
     p.add_argument('-ts', '--task-num', dest='task_num', type=int, default=1)
     p.add_argument('-se', '--skip-error', dest='skip_error', default=False, action='store_true')
     p.add_argument('-tw', '--time-wait', dest='time_wait', type=int, default=1)
     p.add_argument('-to', '--task-order', dest='task_order', type=int, default=0)
 
+def _get_task_pos(opts):
+    return max(0, min(opts.instance_num - 1, opts.instance_pos))
+
 def load_from_list(f_ls, opts):
-    return load_list(f_ls, opts.instance_num, opts.instance_pos)
+    return load_list(f_ls, opts.instance_num, _get_task_pos(opts))
 
 def _list_sub_list(ls, opts):
     logging.debug('load sub list with type %s' % opts.task_order)
 
     if opts.task_order <= 1:
-        return [ls[i] for i in range(opts.instance_pos, len(ls), opts.instance_num)]
+        return [ls[i] for i in range(_get_task_pos(opts), len(ls), opts.instance_num)]
 
     # if opts.task_order == 1:
     #     import math
@@ -39,13 +51,12 @@ def _list_sub_list(ls, opts):
     _nd = int(math.ceil(float(len(ls)) / opts.task_order))
 
     _ss = []
-    for _id in range(opts.instance_pos, _nd, opts.instance_num):
+    for _id in range(_get_task_pos(opts), _nd, opts.instance_num):
         _ps = _id * opts.task_order
         _ss.extend(ls[min(len(ls), _ps): min(_ps + opts.task_order, len(ls))])
 
     return _ss
-
-    raise Exception('unsupported order type %s' % opts.task_order)
+    # raise Exception('unsupported order type %s' % opts.task_order)
 
 def load(ls, opts):
     import os
