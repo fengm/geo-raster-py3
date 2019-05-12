@@ -299,7 +299,8 @@ class s3():
             try:
                 # write an empty file to prevent other process to use the same file name
                 with open(_t, 'wb') as _fo:
-                    _fo.write('')
+                    pass
+                    # _fo.write('')
 
                 _kkk = self.bucket.get_key(k) if isinstance(k, str) or isinstance(k, str) else k
                 if _kkk is None:

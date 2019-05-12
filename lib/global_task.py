@@ -10,7 +10,7 @@ import logging
 
 def load_shp(f, column=None, ext=None, proj=None, ignore_ext=False):
     from osgeo import ogr
-    import geo_base as gb
+    from gio import geo_base as gb
 
     logging.info('loading the input shapefile')
 
@@ -83,7 +83,7 @@ class tiles:
 
     def __init__(self, image_size, cell_size, edge, proj=None):
         import math
-        import geo_base as gb
+        from gio import geo_base as gb
 
         self.b = 6371007.181 #6378137.0
         self.s = image_size
@@ -98,14 +98,14 @@ class tiles:
             self.p = self.b * math.pi
 
     def list(self, ext=None):
-        import geo_base as gb
+        from gio import geo_base as gb
 
         _rows = int(2 * self.p / (self.s * self.c))
         _cols = int(2 * self.p / (self.s * self.c))
 
         _y = self.p / 2
 
-        from . import progress_percentage
+        from gio import progress_percentage
         _ppp = progress_percentage.progress_percentage(_rows, title='checking tiles')
 
         for _row in range(_rows):
@@ -125,7 +125,7 @@ class tiles:
     def extent(self, col, row):
         _geo = [-self.p + (col * self.s * self.c), self.c, 0, self.p / 2 - (row * self.s * self.c), 0, -self.c]
 
-        import geo_raster as ge
+        from gio import geo_raster as ge
         return ge.geo_raster_info(_geo, self.s+self.edge, self.s+self.edge, self.proj)
 
     def files(self, bnd, objs):
@@ -228,7 +228,7 @@ def _output_polygons(polys, f_shp):
     if len(polys) == 0: return
     logging.debug('output polygon to ' + str(f_shp))
 
-    from gio import file_unzip
+    from . import file_unzip
     with file_unzip.file_unzip() as _zip:
         _f_tmp = _zip.generate_file('', '.shp')
         _output_geometries(polys, polys[0][0].proj, ogr.wkbPolygon, _f_tmp)
