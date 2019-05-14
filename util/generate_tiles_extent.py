@@ -75,7 +75,6 @@ def _get_tag(f):
 def generate_shp(rs, f_out):
     from gio import geo_base as gb
     from osgeo import ogr
-    from gio.progress_percentage import progress_percentage
     import os
 
     if not os.path.exists(os.path.dirname(f_out)):
@@ -84,7 +83,8 @@ def generate_shp(rs, f_out):
     _drv = ogr.GetDriverByName('ESRI Shapefile')
     os.path.exists(f_out) and _drv.DeleteDataSource(f_out)
     _shp = _drv.CreateDataSource(f_out)
-    _lyr = _shp.CreateLayer([x for x in os.path.basename(f_out)[:-4] if x[:-4] if x.lower().endswith('.shp') else x], gb.modis_projection(), ogr.wkbPolygon)
+    _lyr = _shp.CreateLayer((lambda x: x[:-4] if x.endswith('.shp') else x)(os.path.basename(f_out)), \
+                        gb.modis_projection(), ogr.wkbPolygon)
 
     _fld = ogr.FieldDefn('FILE', ogr.OFTString)
     _fld.SetWidth(254)
@@ -94,14 +94,16 @@ def generate_shp(rs, f_out):
     _fld.SetWidth(25)
     _lyr.CreateField(_fld)
 
-    _perc = progress_percentage(len(rs))
+    
+    from gio import progress_percentage
+    _ppp = progress_percentage.progress_percentage(len(rs))
 
     _fs = []
     _ts = 0
     _cs = []
 
     for _r in rs:
-        next(_perc)
+        _ppp.next()
 
         if _r is None:
             continue
@@ -122,7 +124,7 @@ def generate_shp(rs, f_out):
 
         _ts += 1
 
-    _perc.done()
+    _ppp.done()
 
     with open(f_out[:-4] + '.txt', 'w') as _fo:
         _fo.write('\n'.join(_fs))
