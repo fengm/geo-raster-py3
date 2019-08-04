@@ -268,10 +268,11 @@ class s3():
             self._zip.clean()
 
     def list(self, k, limit=-1):
-        if limit < 0:
+        if limit >= 0:
             return list(self.bucket.objects.filter(Prefix=k).limit(limit))
             
-        return list(self.bucket.objects.filter(Prefix=k))
+        _ls = list(self.bucket.objects.filter(Prefix=k))
+        return _ls
 
     def exists(self, k):
         _os = self.list(k, limit=1)

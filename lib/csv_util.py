@@ -112,10 +112,11 @@ def _format_value(n):
 
 def open(f, sep=',', skip_error=False):
     import logging
+    import builtins 
 
     _cls = None
 
-    with file(f) as _fi:
+    with builtins.open(f) as _fi:
         _line = -1
         for _l in _fi.read().strip().splitlines():
             _l = _l.strip()

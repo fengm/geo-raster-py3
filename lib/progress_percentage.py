@@ -65,6 +65,12 @@ class progress_percentage:
         _out.append('(%s)' % (datetime.datetime.now() - self.time_s))
 
         self._print(' '.join(_out))
+        
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return self.next()
 
     def next(self, step=1, count=False, message=None):
         self.cur += step
