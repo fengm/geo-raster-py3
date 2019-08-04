@@ -51,7 +51,7 @@ def run(cmd, shell=True, cwd=None, env=None, stdout=None, stderr=None, raise_exc
 
 	for i in range(2 - len(_rs)):
 		_rs.append(None)
-		
+
 	import logging
 	
 	if debug:

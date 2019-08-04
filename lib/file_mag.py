@@ -23,6 +23,12 @@ class obj_mag:
     def list(self, recursive=False):
         raise NotImplementedError()
         
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        pass
+        
 class file_mag(obj_mag):
 
     def __init__(self, f):
@@ -95,11 +101,13 @@ class s3_mag(obj_mag):
 
         self._f = f
         self._s3 = _s3
+        self._s3_inner = s3 is None
 
         obj_mag.__init__(self)
 
     def exists(self):
-        return self._s3.get_key(self._path) is not None
+        return self._s3.exists(self._path)
+        # return self._s3.get_key(self._path) is not None
 
     def get(self):
         _o = self._s3.get(self._path)
@@ -122,9 +130,10 @@ class s3_mag(obj_mag):
             self._list(self, _fs)
             return _fs
             
-        return [s3_mag('s3://%s/%s' % (self._bucket, _f.key), s3=self._s3) for _f in list(self._s3.bucket.list(self._path))]
+        # return [s3_mag('s3://%s/%s' % (self._bucket, _f.key), s3=self._s3) for _f in list(self._s3.bucket.list(self._path))]
+        return [s3_mag('s3://%s/%s' % (self._bucket, _f.key), s3=self._s3) for _f in list(self._s3.list(self._path))]
 
-    def put(self, f, update=False):
+    def put(self, f, update=True):
         self._s3.put(self._path, f, update=update)
 
         if self._path.endswith('.shp') and f.endswith('.shp'):
@@ -136,6 +145,10 @@ class s3_mag(obj_mag):
 
     def __str__(self):
         return self._f
+        
+    def __exit__(self, type, value, traceback):
+        if self._s3_inner:
+            self._s3.clean()
 
 def get(f):
     if f.startswith('s3://'):

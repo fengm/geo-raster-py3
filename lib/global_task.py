@@ -110,7 +110,6 @@ class tiles:
 
         for _row in range(_rows):
             _ppp.next()
-            
             _x = -self.p
             for _col in range(_cols):
                 _ext = gb.geo_extent(_x, _y, _x + ((self.s + self.edge) * self.c), _y \
@@ -229,7 +228,7 @@ def _output_polygons(polys, f_shp):
     if len(polys) == 0: return
     logging.debug('output polygon to ' + str(f_shp))
 
-    from . import file_unzip
+    from gio import file_unzip
     with file_unzip.file_unzip() as _zip:
         _f_tmp = _zip.generate_file('', '.shp')
         _output_geometries(polys, polys[0][0].proj, ogr.wkbPolygon, _f_tmp)
@@ -281,6 +280,7 @@ def save(rs, f_out, ms=None):
     _f_out = file_obj(f_out)
 
     _rs = [_r.obj() for _r in rs]
+    logging.info('created %s tiles' % len(_rs))
 
     from gio import file_unzip
     with file_unzip.file_unzip() as _zip:

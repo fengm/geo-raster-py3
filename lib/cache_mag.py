@@ -30,7 +30,11 @@ class cache_mag():
         from . import config
 
         self._t = tag
-        self._d = config.get('conf', 'cache', cache)
+        
+        if cache:
+            self._d = cache
+        else:
+            self._d = config.get('conf', 'cache')
 
         if not self._d:
             raise Exception('no cache folder specified')
@@ -218,37 +222,60 @@ class s3():
 
     def __init__(self, bucket, fzip=None):
         from gio import config
-        import os
 
         self._t = bucket
-        self._zip = fzip
+        _zip = fzip
 
-        _p = config.get('conf', 'cache')
-        if not _p:
-            if self._zip is None:
-                raise Exception('need to provide zip obj when cache is disabled')
-
+        self._enable_cache = config.getboolean('conf', 'enable_s3_cache', True)
+        if not self._enable_cache:
             logging.info('disabled caching S3 files')
-            _p = self._zip.generate_file()
+            if _zip is None:
+                from gio import file_unzip
+                _zip = file_unzip.file_unzip()
+                
+            _p = _zip.generate_file()
+        else:
+            _p = config.get('conf', 'cache')
+            if not _p:
+                if _zip is None:
+                    raise Exception('need to provide zip obj when cache is disabled')
+    
+                logging.info('disabled caching S3 files')
+                _p = _zip.generate_file()
 
-            os.makedirs(_p)
-
+        self._zip = _zip
+        self._zip_inner = fzip is None
+        
+        self._path = _p
         self._c = cache_mag(bucket, _p)
-        self.bucket = self._bucket()
+
+        import boto3
+        self._s3 = boto3.resource('s3')
+        self.bucket = self._s3.Bucket(self._t)
 
     def __enter__(self):
         return self
 
     def __exit__(self, type, value, traceback):
-        pass
+        self.clean()
+    
+    def clean(self):
+        if (not self._enable_cache) and (self._path):
+            import shutil
+            shutil.rmtree(self._path, True)
+            
+        if self._zip_inner and self._zip:
+            self._zip.clean()
 
-    def _bucket(self):
-        import boto
+    def list(self, k, limit=-1):
+        if limit < 0:
+            return list(self.bucket.objects.filter(Prefix=k).limit(limit))
+            
+        return list(self.bucket.objects.filter(Prefix=k))
 
-        _s3 = boto.connect_s3()
-        _bk = _s3.get_bucket(self._t)
-
-        return _bk
+    def exists(self, k):
+        _os = self.list(k, limit=1)
+        return len(_os) > 0
 
     def get(self, k, lock=None):
         if k is None:
@@ -298,19 +325,18 @@ class s3():
 
             try:
                 # write an empty file to prevent other process to use the same file name
-                with open(_t, 'wb') as _fo:
-                    pass
-                    # _fo.write('')
+                with open(_t, 'w') as _fo:
+                    _fo.write('')
 
-                _kkk = self.bucket.get_key(k) if isinstance(k, str) or isinstance(k, str) else k
+                _kkk = self.get_key(k)
                 if _kkk is None:
                     logging.warning('no key was found: %s' % k)
                     return None
 
                 with open(_t, 'wb') as _fo:
-                    _kkk.get_contents_to_file(_fo)
+                    _kkk.download_fileobj(_fo)
 
-                if not os.path.exists(_t) or os.path.getsize(_t) < _kkk.size:
+                if not os.path.exists(_t) or os.path.getsize(_t) < _kkk.content_length:
                     logging.warning('received partial file from S3 (%s, %s)' % (os.path.getsize(_f), _kkk.size))
                     continue
 
@@ -331,33 +357,28 @@ class s3():
         raise Exception('failed to load S3 file %s' % _key)
 
     def get_key(self, k):
-        _kk = self.bucket.get_key(k) if isinstance(k, str) or isinstance(k, str) else k
+        _kk = self._s3.Object(self._t, k) if isinstance(k, str) or isinstance(k, str) else k
         return _kk
 
-    def new_key(self, k):
-        _kk = self.bucket.new_key(k) if isinstance(k, str) or isinstance(k, str) else k
-        return _kk
+    # def new_key(self, k):
+    #     _kk = self.bucket.new_key(k) if isinstance(k, str) or isinstance(k, unicode) else k
+    #     return _kk
 
-    def put(self, k, f, update=False, lock=None):
-        _kk = self.get_key(k)
-        if _kk is not None:
-            if update == False:
-                logging.info('skip existing file %s: %s' % (_kk.bucket, _kk.name))
+    def put(self, k, f, update=True, lock=None):
+        if update == False:
+            if self.exists(k):
+                logging.info('skip existing file %s: %s' % (self._t, k))
                 return
 
-        if lock is None:
-            if _kk is None:
-                _kk = self.new_key(k)
+        _kk = self.get_key(k)
 
+        if lock is None:
             with open(f, 'rb') as _fi:
-                _kk.set_contents_from_file(_fi)
+                _kk.upload_fileobj(_fi)
         else:
             with lock:
-                if _kk is None:
-                    _kk = self.new_key(k)
-
                 with open(f, 'rb') as _fi:
-                    _kk.set_contents_from_file(_fi)
+                    _kk.upload_fileobj(_fi)
 
-        logging.info('upload file %s: %s' % (_kk.bucket, _kk.name))
+        logging.info('upload file %s: %s' % (_kk.bucket_name, _kk.key))
 

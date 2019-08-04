@@ -18,30 +18,49 @@ def format_path(f):
 
     return f
 
+def output_list(f, ls):
+	from gio import file_unzip
+	import os
+	
+	with file_unzip.file_unzip() as _zip:
+		_d_out = _zip.generate_file()
+		os.makedirs(_d_out)
+		
+		_f_out = os.path.join(_d_out, os.path.basename(f))
+		
+		with open(_f_out, 'w') as _fo:
+		    _fo.write('\n'.join(ls))
+		    
+		_d_ttt = os.path.dirname(f)
+		if not _d_ttt:
+			_d_ttt = os.path.dirname(os.path.abspath(f))
+			
+		file_unzip.compress_folder(_d_out, _d_ttt, [])
+
 def main(opts):
     import os
     import re
     import logging
+    from gio import file_mag
 
     _fs = []
     for _dd in opts.input:
-        if not _dd or not os.path.exists(_dd):
-            logging.warning('skip %s' % _dd)
+        if not _dd:
             continue
-
-        if not os.path.isdir(_dd):
-            _fs.append(os.path.abspath(_dd))
-        else:
-            for _root, _dirs, _files in os.walk(os.path.abspath(_dd)):
-                for _file in _files:
-                    if not opts.pattern or re.search(opts.pattern, _file):
-                        _f = os.path.join(format_path(_root), _file)
-
-                        if os.path.getsize(_f) <= 0:
-                            logging.warning('skip zero size file: %s' % _f)
-                            continue
-
-                        _fs.append(_f)
+        
+        _df = file_mag.get((lambda x: x if x.startswith('s3://') else format_path(os.path.abspath(x)))(_dd))
+        # if _df.exists() == False:
+        #     logging.warning('skip %s' % _dd)
+        #     continue
+        
+        for _f in _df.list(recursive=True):
+            if not opts.pattern or re.search(opts.pattern, str(_f)):
+                if isinstance(_f, file_mag.file_mag):
+                    if os.path.getsize(_f.get()) <= 0:
+                        logging.warning('skip zero size file: %s' % _f)
+                        continue
+                    
+                _fs.append(str(_f))
 
     if len(_fs) == 0:
         print(' * no file was found')
@@ -49,11 +68,7 @@ def main(opts):
 
     if opts.output:
         print('found', len(_fs), 'files')
-
-        (lambda x: os.path.exists(x) or os.makedirs(x))(os.path.dirname(os.path.abspath(opts.output)))
-
-        with open(opts.output, 'w') as _fo:
-            _fo.write('\n'.join(_fs) + '\n')
+        output_list(opts.output, _fs + ['\n'])
 
         if opts.extent:
             print('generate raster extent')
@@ -90,4 +105,3 @@ if __name__ == '__main__':
     from gio import environ_mag
     environ_mag.init_path()
     environ_mag.run(main, [environ_mag.config(usage())])
-

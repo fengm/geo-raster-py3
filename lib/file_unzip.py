@@ -10,7 +10,7 @@ _block_size = 1024 * 1024
 
 import logging
 
-def send_to_s3(f, f_out, update=False):
+def send_to_s3(f, f_out, update=True):
     from . import file_mag
     file_mag.get(f_out).put(f, update)
 
@@ -274,10 +274,7 @@ class file_unzip:
         return self
 
     def __exit__(self, type, value, traceback):
-        if self._debug:
-            logging.warning('remain the temporary files in debug mode')
-        else:
-            self.clean()
+        return self.clean()
 
     def generate_file(self, prefix='', subfix=''):
         return generate_file(self.fd_out, prefix, subfix)
@@ -317,7 +314,7 @@ class file_unzip:
 
         return _f_out
 
-    def clean(self):
+    def _clean(self):
         import shutil, os
 
         if self.exclusive:
@@ -333,3 +330,46 @@ class file_unzip:
         self.files = []
         return
 
+    def clean(self):
+        if self._debug:
+            logging.warning('remain the temporary files in debug mode')
+        else:
+            self._clean()
+            
+    def copy(self, fd_in, fd_ot, exclude_exts=None, include_exts=None):
+        return compress_folder(fd_in, fd_ot, compress_exts=[], \
+            exclude_exts=exclude_exts, include_exts=include_exts)
+            
+    def save(self, f_out, o):
+        import os
+        
+        _et = os.path.splitext(f_out)[1]
+        if _et not in ('.txt', '.csv', '.tif'):
+            raise Exception('unsupported file type (%s)' % _et)
+        
+        _d_tmp = self.generate_file()
+        os.makedirs(_d_tmp)
+        
+        _f_tmp = os.path.join(_d_tmp, os.path.basename(f_out))
+        
+        if isinstance(o, str):
+            with open(_f_tmp, 'w') as _fo:
+                _fo.write(o)
+        
+        if _et in ('.tif'):
+            import geo_raster as ge
+            if isinstance(o, ge.geo_band_cache):
+                o.save(_f_tmp)
+        
+        if os.path.exists(_f_tmp) == False:
+            raise Exception('failed to save the object')
+            
+        _d_out = os.path.dirname(f_out)
+        if not _d_out:
+            _d_out = '.'
+            
+        self.copy(_d_tmp, _d_out)
+
+zip = file_unzip
+
+    

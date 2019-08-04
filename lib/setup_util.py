@@ -63,31 +63,28 @@ def init(tag):
             scripts=_ss,
             )
 
-    print (os.path.exists(_path('etc')))
     if os.path.exists(_path('etc')):
         import os
         import shutil
 
-        if not ('G_INI' in os.environ and (os.environ['G_INI'])):
-            raise Exception('no G_INI environment variable provided')
-            
-        print(' == copying config file ==')
-        _d_ini = os.environ['G_INI']
-        if not os.path.exists(_d_ini):
-            os.makedirs(_d_ini)
+        if 'G_INI' in os.environ and (os.environ['G_INI']):
+            print(' == copying config file ==')
+            _d_ini = os.environ['G_INI']
+            if not os.path.exists(_d_ini):
+                os.makedirs(_d_ini)
 
-        for _root, _dirs, _files in os.walk(_path('etc')):
-            for _file in _files:
-                _f_inp = os.path.join(_root, _file)
-                _f_out = os.path.join(_root.replace(_path('etc'), _d_ini), _file)
+            for _root, _dirs, _files in os.walk(_path('etc')):
+                for _file in _files:
+                    _f_inp = os.path.join(_root, _file)
+                    _f_out = os.path.join(_root.replace(_path('etc'), _d_ini), _file)
 
-                if os.path.exists(_f_out):
-                    print(' - skip existed config file', _file)
-                    continue
+                    if os.path.exists(_f_out):
+                        print(' - skip existed config file', _file)
+                        continue
 
-                _d_out = os.path.dirname(_f_out)
-                os.path.exists(_d_out) or os.makedirs(_d_out)
+                    _d_out = os.path.dirname(_f_out)
+                    os.path.exists(_d_out) or os.makedirs(_d_out)
 
-                print(' + copy config file', _f_out)
-                shutil.copy2(_f_inp, _f_out)
+                    print(' + copy config file', _f_out)
+                    shutil.copy2(_f_inp, _f_out)
 
