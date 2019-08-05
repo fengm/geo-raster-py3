@@ -62,8 +62,9 @@ def run(cmd, shell=True, cwd=None, env=None, stdout=None, stderr=None, raise_exc
 	# if check and _p.returncode != 0:
 	if raise_exception and _p.returncode != 0:
 		raise Exception('Failed with cmd: ' + str(cmd))
-
-	return _p.returncode, _rs[0], _rs[1]
+		
+	_to_t = lambda x: x.decode('utf-8')
+	return _p.returncode, _to_t(_rs[0]), _to_t(_rs[1])
 
 def initGDAL():
 	import os
