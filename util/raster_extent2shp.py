@@ -213,7 +213,8 @@ def generate_shp(fs, proj, f_out, fzip, opts):
     _drv = ogr.GetDriverByName('ESRI Shapefile')
     os.path.exists(f_out) and _drv.DeleteDataSource(f_out)
     _shp = _drv.CreateDataSource(f_out)
-    _lyr = _shp.CreateLayer([x for x in os.path.basename(f_out)[:-4] if x[:-4] if x.lower().endswith('.shp') else x], _proj, ogr.wkbPolygon)
+    _tag = os.path.basename(f_out)[:-4]
+    _lyr = _shp.CreateLayer(_tag, _proj, ogr.wkbPolygon)
 
     _fld = ogr.FieldDefn('FILE', ogr.OFTString)
     _fld.SetWidth(254)
