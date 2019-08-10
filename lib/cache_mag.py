@@ -366,12 +366,11 @@ class s3():
     #     return _kk
 
     def put(self, k, f, update=True, lock=None):
-        if update == False:
-            if self.exists(k):
-                logging.info('skip existing file %s: %s' % (self._t, k))
-                return
-
         _kk = self.get_key(k)
+        if _kk is not None:
+            if update == False:
+                logging.info('skip existing file %s: %s' % (_kk.bucket, _kk.name))
+                return
 
         if lock is None:
             with open(f, 'rb') as _fi:
