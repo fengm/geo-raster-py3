@@ -7,7 +7,7 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN rm /usr/bin/python
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
-RUN apt-get update && apt-get install -y awscli cython3 python3-psycopg2 python3-boto python3-pandas python3-setuptools python3-pip
+RUN apt-get update && apt-get install -y awscli cython3 python3-psycopg2 python3-boto3 python3-pandas python3-setuptools python3-pip
 RUN pip3 install watchtower
 
 WORKDIR /opt
