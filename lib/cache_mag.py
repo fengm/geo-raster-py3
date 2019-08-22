@@ -282,10 +282,8 @@ class s3():
             _os = self.list(k, limit=1)
             return len(_os) > 0
             
-        from botocore.exceptions import ClientError
-        try:
-            self.get_key(k).content_length
-        except ClientError, e:
+        _k = self.get_key(k)
+        if _k is None:
             return False
             
         return True
@@ -345,7 +343,7 @@ class s3():
                 if _kkk is None:
                     logging.warning('no key was found: %s' % k)
                     return None
-
+                    
                 with open(_t, 'wb') as _fo:
                     _kkk.download_fileobj(_fo)
 
@@ -370,8 +368,20 @@ class s3():
         raise Exception('failed to load S3 file %s' % _key)
 
     def get_key(self, k):
-        _kk = self._s3.Object(self._t, k) if isinstance(k, str) or isinstance(k, str) else k
-        return _kk
+        if not k:
+            return None
+            
+        _k = self._s3.Object(self._t, k) if isinstance(k, str) or isinstance(k, str) else k
+        
+        if _k is None:
+            return None
+        
+        try:
+            _k.content_length
+        except ClientError:
+            return None
+
+        return _k
 
     # def new_key(self, k):
     #     _kk = self.bucket.new_key(k) if isinstance(k, str) or isinstance(k, unicode) else k
