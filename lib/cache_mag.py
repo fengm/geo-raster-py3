@@ -399,12 +399,10 @@ class s3():
         logging.info('upload file %s: %s' % (_b, _p))
 
         if lock is None:
-            with open(f, 'rb') as _fi:
-                self.bucket.upload_fileobj(_fi, _p)
+            self.bucket.upload_file(f, _p)
         else:
             with lock:
-                with open(f, 'rb') as _fi:
-                    self.bucket.upload_fileobj(_fi, _p)
+                self.bucket.upload_file(f, _p)
 
 def parse_s3(f):
     import re
