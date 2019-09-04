@@ -395,7 +395,7 @@ class s3():
                 logging.info('skip existing file %s: %s' % (_kk.bucket, _kk.name))
                 return
 
-         _b, _p = self._t, k
+        _b, _p = self._t, k
         logging.info('upload file %s: %s' % (_b, _p))
 
         if lock is None:
