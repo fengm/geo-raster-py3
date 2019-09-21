@@ -1,15 +1,15 @@
 
-# FROM geographica/gdal2:latest
+FROM geographica/gdal2:latest
 # FROM thinkwhere/gdal-python:3.7-ubuntu
-FROM osgeo/gdal:ubuntu-small-latest
+# FROM osgeo/gdal:ubuntu-small-latest
 
 LABEL creator Min Feng
 ENV DEBIAN_FRONTEND noninteractive
 
-# RUN rm /usr/bin/python
+RUN rm /usr/bin/python
 
-# RUN ln -s /usr/bin/python3 /usr/bin/python
-# RUN ln -s /usr/bin/pip3 /usr/bin/pip
+RUN ln -s /usr/bin/python3 /usr/bin/python
+RUN ln -s /usr/bin/pip3 /usr/bin/pip
 
 RUN apt-get update && apt-get install -y awscli python3-psycopg2 python3-pip
 RUN apt remove -y python3-numpy
