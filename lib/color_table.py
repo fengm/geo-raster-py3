@@ -76,6 +76,9 @@ class color_table:
         _colors = {}
         with open(f) as _fi:
             _ls = _fi.read().strip().splitlines()
+            if len(_ls) == 0:
+                raise Exception('color table is empty')
+
             if 'QGIS' in _ls[0]:
                 return self._load_qgis_colors(_ls)
                 
