@@ -131,6 +131,7 @@ class sr_dir(sr):
         self._bnds = {}
 
     def _is_img(self, f):
+        f = f.lower()
         return f.endswith('.img.gz') or f.endswith('.img') or f.endswith('.tif.gz') or f.endswith('.tif')
 
     def _list_dir(self, p):
@@ -141,6 +142,7 @@ class sr_dir(sr):
         _bs = []
         for _f in os.listdir(p):
             _p = os.path.join(p, _f)
+            _f = _f.lower()
 
             _m = self._is_img(_f) and re.search('sr_band(\d+)\.', _f)
             if _m:
@@ -150,7 +152,8 @@ class sr_dir(sr):
                     _bs.append(_b)
                 continue
 
-            _m = self._is_img(_f) and re.search('toa_band(\d+)\.', _f)
+            _m = self._is_img(_f) and (re.search('toa_band(\d+)\.', _f) or \
+                    re.search('toa_b(\d+)\.', _f))
             if _m:
                 _fs['toa_b%s' % _m.group(1)] = _p
                 _b = int(_m.group(1))
@@ -171,18 +174,19 @@ class sr_dir(sr):
                 _fs['cfmask'] = _p
                 continue
 
-            _m = (not _f.startswith('lnd')) and re.search('_MTL.txt', _f)
+            _m = (not _f.startswith('lnd')) and re.search('_mtl.txt', _f)
             if _m:
                 _fs['mtl'] = _p
                 continue
 
         self._fs = _fs
         self._bs = _bs
-
+        
+        logging.info('found bands: %s' % str(self._fs.keys()))
         assert 'mtl' in _fs
 
     def _load_band(self, b):
-        import geo_raster as ge
+        from . import geo_raster as ge
 
         _b = b
         logging.info('loading band %s (%s)' % (b, _b))
@@ -204,7 +208,7 @@ class sr_dir(sr):
         #     return None
 
         if _b in self._bs:
-            import geo_raster as ge
+            from . import geo_raster as ge
             _bnd = ge.open(self._fzip.unzip(self._fs[_b])).get_band().cache()
             self._bnds['cloud'] = _bnd
 
@@ -212,12 +216,15 @@ class sr_dir(sr):
 
         _b = 'cfmask'
         if _b in self._fs:
-            import geo_raster as ge
+            from . import geo_raster as ge
             _bnd = qa.from_fmask(ge.open(self._fzip.unzip(self._fs[_b])).get_band().cache(), code_set)
             self._bnds['cloud'] = _bnd
 
             return _bnd
-
+            
+        logging.warning('failed to find cfmask in (%s) (%s)' % \
+                    (str(self._fs.keys()), str(self._bs.keys())))
+                    
         return None
 
     def tda_cloud(self, b):
@@ -280,7 +287,7 @@ class sr_hdf(sr):
         if not self._inf:
             raise Exception('failed to parse %s' % f)
 
-        import geo_raster as ge
+        from . import geo_raster as ge
         import re
 
         _img = ge.open(f)
