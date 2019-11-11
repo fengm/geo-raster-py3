@@ -21,7 +21,7 @@ def to_dist(vs):
         _cs.append([_w1 * _c for _c in _v['color']])
 
     _p = int(sum(_ps))
-    _c = [int(sum([_c[_i] for _c in _cs])) for _i in xrange(4)]
+    _c = [int(sum([_c[_i] for _c in _cs])) for _i in range(4)]
 
     return _p, _c
 
@@ -29,7 +29,7 @@ def map_colortable(cs):
     from osgeo import gdal
 
     _color_tables = gdal.ColorTable()
-    for i in xrange(256):
+    for i in range(256):
         if i in cs:
             _color_tables.SetColorEntry(i, tuple(cs[i] if len(cs[i]) >= 4 else (list(cs[i]) + [255])))
 
@@ -41,7 +41,7 @@ class color_table:
     def __init__(self, ccs):
         _rs = ccs if isinstance(ccs, dict) else self._load_color_file(ccs)
         _vs = sorted(_rs.keys())
-        _cs = [map(int, list(_rs[_v]) + ([] if len(_rs[_v]) > 3 else [255])) for _v in _vs]
+        _cs = [list(map(int, list(_rs[_v]) + ([] if len(_rs[_v]) > 3 else [255]))) for _v in _vs]
 
         self._vs = _vs
         self._rs = _rs
@@ -117,11 +117,11 @@ class color_table:
         _values = {}
 
         _vs.append(_vs[-1])
-        for i in xrange(len(_vs) - 1):
+        for i in range(len(_vs) - 1):
             _a = _vs[i]
             _d = (_vs[i+1] - _vs[i]) / float(_div)
 
-            for _n in xrange(_div):
+            for _n in range(_div):
                 _v, _c = self._interpolate(_a)
 
                 if _v not in _colors:
@@ -143,7 +143,7 @@ class color_table:
         import math
         
         _cs = {}
-        for _c in xrange(int(self._v_min), int(math.ceil(self._v_max)) + 1):
+        for _c in range(int(self._v_min), int(math.ceil(self._v_max)) + 1):
             _cs[_c] = self.get_color(_c, clip)
             
         return _cs
@@ -175,7 +175,7 @@ class color_table:
             return self._values[self._v_max]
 
         _vs = []
-        for _v in self._values.keys():
+        for _v in list(self._values.keys()):
             if _v == v:
                 return self._values[_v]
 
@@ -201,7 +201,7 @@ class color_table:
 
         _pp = 0.0
 
-        for _i in xrange(len(_vs) - 1):
+        for _i in range(len(_vs) - 1):
             _ds = abs(_v - _vs[_i])
             _ps = int(_pp)
 
