@@ -26,7 +26,8 @@ def estimate_type(vals):
     return 'string', max(list(map(len, vals)))
 
 def read(f, sep=','):
-    _ls = [_l for _l in file(f).read().splitlines() if _l]
+    import builtins
+    _ls = [_l for _l in builtins.open(f, 'r').read().splitlines() if _l]
 
     _cols = _ls[0].split(sep)
     _vals = [_v for _v in [_l.split(sep) for _l in _ls[1:]] if len(_v) == len(_cols)]

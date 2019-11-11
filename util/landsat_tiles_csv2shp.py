@@ -43,7 +43,7 @@ def load_landsat_tile(f_shp, tile_col='PATHROW'):
 
 	_vs = {}
 	for _fet in _lyr:
-		_tile = list(_fet.items())[tile_col]
+		_tile = _fet.items()[tile_col]
 		_vs[_tile] = _fet
 
 	return _vs, _lyr.schema, _lyr.GetSpatialRef(), _lyr.GetLayerDefn().GetGeomType()
@@ -60,7 +60,6 @@ def csv2shapefile(f_csv, f_out, col, f_landsat):
 	for i in range(len(_cols)):
 		print('+', _cols[i], ':', _typs[i])
 
-	print('write to\n>', f_out)
 	_fd_out = os.path.dirname(f_out)
 	if _fd_out:
 		os.path.exists(_fd_out) or os.makedirs(_fd_out)
@@ -89,7 +88,7 @@ def csv2shapefile(f_csv, f_out, col, f_landsat):
 		_temp = _tiles[_tile]
 		for i in range(len(_landsat_schema)):
 			_field = _landsat_schema[i]
-			_feat.SetField(_field.name, list(_temp.items())[_landsat_schema[i].name])
+			_feat.SetField(_field.name, _temp.items()[_landsat_schema[i].name])
 		_feat.SetGeometry(_temp.geometry())
 
 		_lyr.CreateFeature(_feat)
@@ -127,6 +126,7 @@ def main(opts):
 		if not _d_ttt:
 			_d_ttt = os.path.dirname(os.path.abspath(f_out))
 			
+		print('write to\n>', f_out)
 		file_unzip.compress_folder(_d_out, _d_ttt, [])
 
 def usage():
