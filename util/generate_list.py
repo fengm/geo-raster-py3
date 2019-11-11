@@ -65,27 +65,44 @@ def main(opts):
     if len(_fs) == 0:
         print(' * no file was found')
         return
-
-    if opts.output:
-        print('found', len(_fs), 'files')
-        output_list(opts.output, _fs + ['\n'])
-
-        if opts.extent:
-            print('generate raster extent')
-
-            _cmd = 'raster_extent2shp.py -i %s ' % opts.output
-            if opts.sin:
-                _cmd += ' -p sin '
-
-            _tsk = '-in %s -ip %s -ts %s %s -tw %s -to %s' % ( \
-                    opts.instance_num, opts.instance_pos, opts.task_num, \
-                            '-se' if opts.skip_error else '', opts.time_wait, opts.task_order)
-
-            from gio import run_commands
-            run_commands.run(_cmd + _tsk)
-    else:
+    
+    if not opts.output:
         for _l in _fs:
             print(_l)
+        return
+        
+
+    print('found', len(_fs), 'files')
+    output_list(opts.output, _fs + ['\n'])
+
+    if not opts.extent:
+        return
+    
+    print('generate raster extent')
+    from gio import run_commands
+    
+    _tsk = '-in %s -ip %s -ts %s %s -tw %s -to %s' % ( \
+            opts.instance_num, opts.instance_pos, opts.task_num, \
+                    '-se' if opts.skip_error else '', opts.time_wait, opts.task_order)
+
+    if opts.wrs2:
+        print('generate WRS2 raster extent')
+        
+        _cmd = 'retrieve_landsat_tiles.py -i %s' % opts.output
+        run_commands.run(_cmd)
+        
+        _cmd = 'landsat_tiles_csv2shp.py -i %s' % opts.output[:-3] + 'csv'
+        run_commands.run(_cmd)
+        
+        return
+
+    print('generate raster extent')
+    
+    _cmd = 'raster_extent2shp.py -i %s ' % opts.output
+    if opts.sin:
+        _cmd += ' -p sin '
+
+    run_commands.run(_cmd + _tsk)
 
 def usage():
     _p = environ_mag.usage(True)
@@ -98,6 +115,8 @@ def usage():
 
     _p.add_argument('-e', '--extent', dest='extent', action='store_true', \
             help='run raster_extent2shp after the list is generated')
+    _p.add_argument('-w2', '--wrs2', dest='wrs2', action='store_true', \
+            help='generate WRS2 tiles')
 
     return _p
 
