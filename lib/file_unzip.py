@@ -343,10 +343,6 @@ class file_unzip:
     def save(self, f_out, o):
         import os
         
-        _et = os.path.splitext(f_out)[1]
-        if _et not in ('.txt', '.csv', '.tif'):
-            raise Exception('unsupported file type (%s)' % _et)
-        
         _d_tmp = self.generate_file()
         os.makedirs(_d_tmp)
         
@@ -355,8 +351,7 @@ class file_unzip:
         if isinstance(o, str):
             with open(_f_tmp, 'w') as _fo:
                 _fo.write(o)
-        
-        if _et in ('.tif'):
+        else:
             import geo_raster as ge
             if isinstance(o, ge.geo_band_cache):
                 o.save(_f_tmp)
