@@ -119,9 +119,9 @@ def visualize_bands(f_inp, bands, compress, convert_sr, f_out, fzip):
     print('loading', f_inp)
 
     _bnds = []
-    if '%s' in f_inp:
+    if '{}' in f_inp:
         for _b in bands:
-            _bnds.append(ge.open(fzip.unzip(f_inp % _b)).get_band())
+            _bnds.append(ge.open(fzip.unzip(f_inp.format(_b))).get_band())
     elif f_inp.endswith('.tar.gz'):
         print('processing tar.gz')
         import tarfile

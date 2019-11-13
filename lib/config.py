@@ -122,7 +122,8 @@ def load(f_cfg=None, defaults=None, dict_type=collections.OrderedDict, allow_no_
     defaults != None and _df.update(defaults)
 
     import configparser
-    cfg = configparser.ConfigParser(_df, dict_type, allow_no_value, interpolation=configparser.ExtendedInterpolation())
+    # cfg = configparser.ConfigParser(_df, dict_type, allow_no_value, interpolation=configparser.ExtendedInterpolation())
+    cfg = configparser.ConfigParser(_df, dict_type, allow_no_value)
     len(_fs) and cfg.read(_fs)
     
     logging.debug('loading sys varaibles')
