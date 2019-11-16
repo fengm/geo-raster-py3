@@ -352,7 +352,7 @@ class file_unzip:
             with open(_f_tmp, 'w') as _fo:
                 _fo.write(o)
         else:
-            import geo_raster as ge
+            from . import geo_raster as ge
             if isinstance(o, ge.geo_band_cache):
                 o.save(_f_tmp)
         
