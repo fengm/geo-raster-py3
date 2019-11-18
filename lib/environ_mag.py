@@ -45,7 +45,7 @@ def set_config_items(opts):
 
     for _k, _v in list(opts.__dict__.items()):
         if _v is not None:
-            config.cfg.set('conf', _k, str(_v).replace('%s', '{}'))
+            config.set('conf', _k, str(_v).replace('%s', '{}'))
 
 def config(p, enable_multi_processing=True):
     _opts = p.parse_args()

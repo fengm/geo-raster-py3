@@ -168,7 +168,8 @@ def _set(section, name, val):
         cfg.add_section(section)
 
     logging.debug('setting config %s=%s' % (section + '.' + name, val))
-    cfg.set(section, name, str(val) if val is not None else None)
+    _val = str(val) if val is not None else None
+    cfg.set(section, name, _val)
     
 def _get_sys_var(section, name, val):
     if section != 'conf':

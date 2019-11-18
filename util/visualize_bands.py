@@ -216,9 +216,10 @@ def visualize_bands(f_inp, bands, compress, convert_sr, f_out, fzip):
 
 def main(opts):
     import os
-    from gio import file_unzip
+    from gio import file_unzip, config
+    
     with file_unzip.file_unzip() as _zip:
-        _f_inp = opts.input
+        _f_inp = config.get('conf', 'input')
         _f_out = opts.output
 
         if os.path.isdir(_f_out):
