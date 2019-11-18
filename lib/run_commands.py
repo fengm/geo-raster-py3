@@ -52,7 +52,7 @@ def run(cmd, shell=True, cwd=None, env=None, stdout=None, stderr=None, raise_exc
 	for i in range(2 - len(_rs)):
 		_rs.append(None)
 
-	_to_t = lambda x: x.decode('utf-8') if x else x
+	_to_t = lambda x: x.decode('utf-8') if x is not None else x
 	_rs = [_to_t(_r) for _r in _rs]
 
 	import logging
