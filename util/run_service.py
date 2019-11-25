@@ -46,7 +46,7 @@ def main(opts):
             print('failed with the command')
 
         if opts.kill:
-            print 'clean command'
+            print('clean command')
             kill_p(opts.command)
 
         print('waiting for restart %ss' % opts.time)
