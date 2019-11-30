@@ -32,7 +32,8 @@ def output_shp(f_inp, b, d_out, f_out, ext):
     os.path.exists(f_out) and _drv.DeleteDataSource(f_out)
 
     _shp = _drv.CreateDataSource(f_out)
-    _lyr = _shp.CreateLayer([x for x in os.path.basename(f_out)[:-4] if x[:-4] if x.lower().endswith('.shp') else x], _yyy.GetSpatialRef(), ogr.wkbPolygon)
+    _nam = os.path.basename(f_out)
+    _lyr = _shp.CreateLayer(os.path.basename(_nam)[:-4] if _nam.lower().endswith('.shp') else _nam, _yyy.GetSpatialRef(), ogr.wkbPolygon)
 
     _fld = ogr.FieldDefn('FILE', ogr.OFTString)
     _fld.SetWidth(254)
@@ -142,13 +143,13 @@ def load_list(f, b, d_out, ext):
 
     _ls = []
     for _r in _yyy:
-        _f = list(_r.items())['FILE']
+        _f = _r.items()['FILE']
         # _o = update_path(_f, b, d_out)
         # print _f, '|', _o
 
         # _ls.append((_f, _o))
-        if not file_mag.get(_f).exists():
-            _f = None
+        # if not file_mag.get(_f).exists():
+        #     _f = None
             
         _ls.append((_f, b, d_out))
 
@@ -161,7 +162,7 @@ def main(opts):
     _ps = []
     _s = 0.0
     for _f, _b, _d_out in multi_task.load(load_list(opts.input, opts.base_path, \
-            (opts.output + '/data'), opts.extent), opts):
+            (opts.output + ('data' if opts.output.endswith('/') else '/data')), opts.extent), opts):
 
         if not _f:
             continue
