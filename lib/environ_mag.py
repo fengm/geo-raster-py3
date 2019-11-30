@@ -70,8 +70,10 @@ def config(p, enable_multi_processing=True):
     
 def _opts_to_str(opts):
     _vs = []
-    for _k, _v in list({key: value for key, value in list(opts.__dict__.items()) if not key.startswith("__")}.items()):
-        _vs.append('%s=%s' % (_k, _v))
+
+    for _opts in opts:
+        for _k, _v in list({key: value for key, value in list(_opts.__dict__.items()) if not key.startswith("__")}.items()):
+            _vs.append('%s=%s' % (_k, _v))
     
     return '; '.join(_vs)
 
@@ -109,7 +111,7 @@ def run(func, opts):
     from . import logging_util
 
     logging_util.info(('CMD (%s): ' % os.getcwd()) + ' '.join(['"%s"' % x if ' ' in x else x for x in sys.argv]))
-    _parse_env(*opts)
+    _parse_env(opts[0])
 
     with file_unzip.file_unzip() as _zip:
         _tmp = _zip.generate_file()
@@ -118,8 +120,12 @@ def run(func, opts):
         _cache = config.get('conf', 'cache', None)
         if not _cache:
             config.set('conf', 'cache', os.path.join(_tmp, 'cache'))
+
+        if config.getint('conf', 'task_type') is not None:
+            from . import multi_task
+            multi_task.init(opts[0])
             
-        logging_util.info('options: ' + _opts_to_str(*opts))
+        logging_util.info('options: ' + _opts_to_str(opts))
 
         if config.getboolean('conf', 'debug', True):
             return func(*opts)

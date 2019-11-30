@@ -15,8 +15,35 @@ def _default_task_pos():
     _c = 'AWS_BATCH_JOB_ARRAY_INDEX'
     if _c in os.environ:
         return int(os.environ[_c])
-    
+
     return 0
+
+def init(opts):
+    from . import config
+    _tt = config.getint('conf', 'task_type')
+    
+    if _tt == 0:
+        return True
+
+    if _tt == 1:
+        from mpi4py import MPI
+
+        _comm=MPI.COMM_WORLD
+
+        _size=_comm.size
+        _rank=_comm.rank
+
+        logging.info('use MPI task pos %s/%s' % (_rank, _size))
+
+        opts.instance_num = _size
+        opts.instance_pos = _rank
+
+        config.set('conf', 'instance_num', _size)
+        config.set('conf', 'instance_pos', _rank)
+
+        return True
+
+    raise Exception('unsupported task type %s' % _tt)
 
 def add_task_opts(p):
     p.add_argument('-in', '--instance-num', dest='instance_num', type=int, default=1)
@@ -25,6 +52,7 @@ def add_task_opts(p):
     p.add_argument('-se', '--skip-error', dest='skip_error', default=False, action='store_true')
     p.add_argument('-tw', '--time-wait', dest='time_wait', type=int, default=1)
     p.add_argument('-to', '--task-order', dest='task_order', type=int, default=0)
+    p.add_argument('-tt', '--task-type', dest='task_type', type=int, default=0, help='0: default; 1: mpi')
 
 def _get_task_pos(opts):
     return max(0, min(opts.instance_num - 1, opts.instance_pos))
