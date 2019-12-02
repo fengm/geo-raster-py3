@@ -31,7 +31,7 @@ class progress_percentage:
         self.title = title
         self.bar = bar
         self.text = ''
-        self.show = config.getboolean('conf', 'show_progress', True)
+        self.show = config.getboolean('conf', 'show_progress', _debug)
 
         logging.debug('+ start process :' + title if title != None \
                 else '<no name>')
@@ -39,6 +39,9 @@ class progress_percentage:
             print('>', title)
 
     def _print(self, txt):
+        if not self.show:
+            return
+
         print('\r', txt, end=' ')
         if len(self.text) > len(txt):
             print(' ' * (len(self.text) - len(txt)), end=' ')
@@ -47,9 +50,6 @@ class progress_percentage:
         self.text = txt
 
     def print_prog(self, pos):
-        if not self.show:
-            return
-
         _pos = pos if pos <= 100 else 100
 
         _out = []
@@ -69,7 +69,7 @@ class progress_percentage:
         _out.append('(%s)' % (datetime.datetime.now() - self.time_s))
 
         _txt = ' '.join(_out)
-        if self.min_perc_step > 0:
+        if pos == 100 or self.min_perc_step > 0:
             logging.info(_txt)
 
         self._print(_txt)
