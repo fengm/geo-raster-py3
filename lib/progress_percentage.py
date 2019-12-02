@@ -16,7 +16,7 @@ import datetime, logging, sys
 class progress_percentage:
 
     def __init__(self, size, title=None, step=100, txt_format='%(p)3d%%', bar=False, min_perc_step=None):
-        self.pos = -1
+        self.pos = 0
         self.cur = -1
         self.size = size
         self.step = step
