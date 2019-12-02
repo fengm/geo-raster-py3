@@ -15,18 +15,22 @@ import datetime, logging, sys
 
 class progress_percentage:
 
-    def __init__(self, size, title=None, step=100, txt_format='%(p)3d%%', bar=False):
+    def __init__(self, size, title=None, step=100, txt_format='%(p)3d%%', bar=False, min_perc_step=None):
         self.pos = -1
         self.cur = -1
         self.size = size
         self.step = step
         self.txt_format = txt_format
         self.time_s = datetime.datetime.now()
+
+        from . import config
+        _debug = config.getboolean('conf', 'debug')
+
+        self.min_perc_step = min_perc_step if (min_perc_step is not None) else (1 if _debug else 10)
+
         self.title = title
         self.bar = bar
         self.text = ''
-
-        from gio import config
         self.show = config.getboolean('conf', 'show_progress', True)
 
         logging.debug('+ start process :' + title if title != None \
@@ -64,7 +68,11 @@ class progress_percentage:
         _out.append(self.txt_format % {'p': _pos})
         _out.append('(%s)' % (datetime.datetime.now() - self.time_s))
 
-        self._print(' '.join(_out))
+        _txt = ' '.join(_out)
+        if self.min_perc_step > 0:
+            logging.info(_txt)
+
+        self._print(_txt)
         
     def __iter__(self):
         return self
@@ -85,7 +93,7 @@ class progress_percentage:
         else:
             _pos = self.cur * self.step // self.size
 
-            if self.pos != _pos:
+            if _pos - self.pos >= self.min_perc_step:
                 self.pos = _pos
                 self.print_prog(self.pos * 100 / self.step)
 
