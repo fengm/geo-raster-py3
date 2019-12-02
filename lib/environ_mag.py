@@ -21,7 +21,7 @@ def usage(multi_task=False):
     _p.add_argument('--no-clean', dest='no_clean', action='store_true', help='deprecated')
     _p.add_argument('--clean', dest='clean', type='bool', default=False)
     _p.add_argument('--temp', dest='temp')
-    _p.add_argument('--show-progress', dest='show_progress', type='bool', default='true')
+    _p.add_argument('--show-progress', dest='show_progress', action='store_true', default=False)
 
     if multi_task:
         from gio import multi_task
