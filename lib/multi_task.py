@@ -103,7 +103,7 @@ def load_list(f_ls, num, pos):
     logging.debug('loading ' + f_ls)
 
     with open(f_ls) as _fi:
-        _ls_a = _fi.strip().read().splitlines()
+        _ls_a = _fi.read().strip().splitlines()
         return _ls_a
 
 def run(func, ps, opts, vs=[]):
