@@ -266,6 +266,29 @@ def getboolean(section, name, val=None):
 
     return cfg.getboolean(section, name)
 
+def getjson(section, name, val=None):
+    """get config param
+
+    :section: section
+    :name: option name
+    :val: default value
+    :returns: config value
+
+    """
+    global cfg
+
+    _v = None
+    if not cfg.has_option(section, name):
+        _v = _get_sys_var(section, name, val)
+    else:
+        _v = cfg.get(section, name)
+
+    if _v is None:
+        return val
+
+    import json
+    return json.loads(_v.replace("'", '"'))
+
 def has_option(section, name):
     """get config param
 
