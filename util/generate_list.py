@@ -85,7 +85,7 @@ def main(opts):
             opts.instance_num, opts.instance_pos, opts.task_num, \
                     '-se' if opts.skip_error else '', opts.time_wait, opts.task_order)
 
-    if opts.wrs2:
+    if opts.extent_type == 'wrs2':
         print('generate WRS2 raster extent')
         
         _cmd = 'retrieve_landsat_tiles.py -i %s' % opts.output
@@ -93,15 +93,21 @@ def main(opts):
         
         _cmd = 'landsat_tiles_csv2shp.py -i %s' % opts.output[:-3] + 'csv'
         run_commands.run(_cmd)
-        
+        return
+
+    _cmd = 'raster_extent2shp.py -i %s ' % opts.output
+
+    if opts.extent_type == 'gcs':
+        print('generate GCS raster extent')
+        run_commands.run(_cmd + ' -p 4326')
+        return
+
+    if opts.extent_type == 'sin':
+        print('generate sinusoidal raster extent')
+        run_commands.run(_cmd + ' -p sin')
         return
 
     print('generate raster extent')
-    
-    _cmd = 'raster_extent2shp.py -i %s ' % opts.output
-    if opts.sin:
-        _cmd += ' -p sin '
-
     run_commands.run(_cmd + _tsk)
 
 def usage():
@@ -111,12 +117,11 @@ def usage():
     _p.add_argument('-z', '--skip-zero-file', dest='skip_zero_file', action='store_true')
     _p.add_argument('-o', '--output', dest='output')
     _p.add_argument('-p', '--pattern', dest='pattern')
-    _p.add_argument('-s', '--sin', dest='sin', action='store_true', default=True)
 
     _p.add_argument('-e', '--extent', dest='extent', action='store_true', \
             help='run raster_extent2shp after the list is generated')
-    _p.add_argument('-w2', '--wrs2', dest='wrs2', action='store_true', \
-            help='generate WRS2 tiles')
+
+    _p.add_argument('-t', '--extent-type', dest='extent_type')
 
     return _p
 
