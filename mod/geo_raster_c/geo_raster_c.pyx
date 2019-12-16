@@ -534,7 +534,7 @@ class geo_band_cache(geo_band_info):
         return geo_band_cache(_dat_out, bnd.geo_transform, bnd.proj,
                 _nodata, self.pixel_type, self.color_table)
     
-    def mask(f):
+    def mask(self, f):
         from . import file_unzip
         with file_unzip.zip() as _zip:
             _f_out = _zip.generate_file('', '.tif')
@@ -559,7 +559,7 @@ class geo_band_cache(geo_band_info):
             _lyr = _shp.GetLayer()
         
             if not _lyr.GetSpatialRef().IsSame(_bnd.proj):
-                _f_shp = fzip.generate_file('', '.shp')
+                _f_shp = _zip.generate_file('', '.shp')
         
                 _cmd = 'ogr2ogr -t_srs "%s" %s %s' % (_bnd.proj.ExportToProj4(), _f_shp, _f_inp)
                 run_commands.run(_cmd)
