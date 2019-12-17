@@ -533,6 +533,42 @@ class geo_band_cache(geo_band_info):
 
         return geo_band_cache(_dat_out, bnd.geo_transform, bnd.proj,
                 _nodata, self.pixel_type, self.color_table)
+    
+    def mask(self, f):
+        from . import file_unzip
+        with file_unzip.zip() as _zip:
+            _f_out = _zip.generate_file('', '.tif')
+            
+            import numpy as np
+            
+            bnd = self
+            
+            _dat = np.zeros((bnd.height, bnd.width), dtype=np.uint8)
+            _bnd = bnd.from_grid(_dat)
+            _bnd.pixel_type = pixel_type()
+            _bnd.save(_f_out)
+            
+            from osgeo import ogr
+            from . import run_commands
+            from . import file_mag
+        
+            _f_inp = file_mag.get(f).get()
+            _f_shp = _f_inp
+        
+            _shp = ogr.Open(_f_inp)
+            _lyr = _shp.GetLayer()
+        
+            if not _lyr.GetSpatialRef().IsSame(_bnd.proj):
+                _f_shp = _zip.generate_file('', '.shp')
+        
+                _cmd = 'ogr2ogr -t_srs "%s" %s %s' % (_bnd.proj.ExportToProj4(), _f_shp, _f_inp)
+                run_commands.run(_cmd)
+        
+            _cmd = 'gdal_rasterize -at -burn 1 %s %s' % (_f_shp, _f_out)
+            run_commands.run(_cmd)
+            
+            _bbb = geo_raster.open(_f_out).get_band().cache()
+            bnd.data[_bbb.data != 1] = bnd.nodata
 
 class geo_band(geo_band_info):
     '''A raster band'''
