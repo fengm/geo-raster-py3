@@ -46,7 +46,7 @@ def output_shp(f_inp, b, d_out, f_out, ext):
     for _r in _yyy:
         _ftr = ogr.Feature(_lyr.GetLayerDefn())
 
-        _vs = list(_r.items())
+        _vs = _r.items()
         _f = update_path(_vs['FILE'], b, d_out)
 
         _ftr.SetField('file', _f)
