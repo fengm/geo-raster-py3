@@ -143,6 +143,9 @@ def compress_folder(fd_in, fd_ot, compress_exts=None, exclude_exts=None, include
     import shutil
     import os
 
+    if not fd_ot:
+        fd_ot = '.'
+
     logging.debug('compress results from %s to %s' % (fd_in, fd_ot))
 
     for _file in os.listdir(fd_in):
@@ -340,7 +343,7 @@ class file_unzip:
         return compress_folder(fd_in, fd_ot, compress_exts=[], \
             exclude_exts=exclude_exts, include_exts=include_exts)
             
-    def save(self, f_out, o):
+    def save(self, o, f_out):
         import os
         
         _d_tmp = self.generate_file()
