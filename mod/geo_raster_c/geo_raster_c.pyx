@@ -1225,11 +1225,19 @@ def load_colortable(f):
     import sys
     import builtins
 
+    _header = True
     _colors = {}
+
     for _l in builtins.open(f).read().splitlines():
         _l = _l.strip()
         if not _l:
             continue
+
+        if _header:
+            if _l.startswith('# QGIS'):
+                from . import color_table
+                return color_table.load(f)
+            _header = False
 
         _vs = re.split('\s+', _l, maxsplit=1)
         if len(_vs) != 2:
