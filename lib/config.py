@@ -137,22 +137,29 @@ def load(f_cfg=None, defaults=None, dict_type=collections.OrderedDict, allow_no_
         if _m:
             logging.debug('add sys var %s' % _m.group(1).upper())
             _set('sys', _m.group(1).upper(), os.environ[_k])
+            
+def _get_cfg():
+    global cfg
+    
+    if cfg is None:
+        load()
+        
+    return cfg
 
 def get_attr(section, name):
-    global cfg
-    return cfg.get(section, name)
+    return _get_cfg().get(section, name)
 
 def get_at(section, name):
     return get_attr(section, name)
 
 def items(section):
-    global cfg
+    _cfg = _get_cfg()
 
-    if section not in cfg.sections():
+    if section not in _cfg.sections():
         return
 
-    _ns = cfg.defaults()
-    for _n, _v in cfg.items(section):
+    _ns = _cfg.defaults()
+    for _n, _v in _cfg.items(section):
         if _n in _ns:
             continue
 
@@ -162,22 +169,23 @@ def set(section, name, val):
     return _set(section, name, val)
     
 def _set(section, name, val):
-    global cfg
+    _cfg = _get_cfg()
 
-    if cfg.has_section(section) == False:
-        cfg.add_section(section)
+    if _cfg.has_section(section) == False:
+        _cfg.add_section(section)
 
     logging.debug('setting config %s=%s' % (section + '.' + name, val))
     _val = str(val) if val is not None else None
-    cfg.set(section, name, _val)
+    _cfg.set(section, name, _val)
     
 def _get_sys_var(section, name, val):
+    _cfg = _get_cfg()
     if section != 'conf':
         return val
         
     _n = name.upper()
-    if cfg.has_option('sys', _n):
-        _v = cfg.get('sys', _n)
+    if _cfg.has_option('sys', _n):
+        _v = _cfg.get('sys', _n)
         return _v
             
     return val
@@ -191,9 +199,9 @@ def get(section, name, val=None):
     :returns: config value
 
     """
-    global cfg
+    _cfg = _get_cfg()
 
-    if not cfg.has_option(section, name):
+    if not _cfg.has_option(section, name):
         _v = _get_sys_var(section, name, val)
         
         if _v is None:
@@ -201,7 +209,7 @@ def get(section, name, val=None):
             
         return _v
         
-    return cfg.get(section, name)
+    return _cfg.get(section, name)
 
 def getint(section, name, val=None):
     """get config param
@@ -212,9 +220,9 @@ def getint(section, name, val=None):
     :returns: config value
 
     """
-    global cfg
+    _cfg = _get_cfg()
 
-    if not cfg.has_option(section, name):
+    if not _cfg.has_option(section, name):
         _v = _get_sys_var(section, name, val)
         
         if _v is None:
@@ -222,7 +230,7 @@ def getint(section, name, val=None):
             
         return int(_v)
 
-    return cfg.getint(section, name)
+    return _cfg.getint(section, name)
 
 def getfloat(section, name, val=None):
     """get config param
@@ -233,9 +241,9 @@ def getfloat(section, name, val=None):
     :returns: config value
 
     """
-    global cfg
+    _cfg = _get_cfg()
 
-    if not cfg.has_option(section, name):
+    if not _cfg.has_option(section, name):
         _v = _get_sys_var(section, name, val)
         
         if _v is None:
@@ -243,7 +251,7 @@ def getfloat(section, name, val=None):
             
         return float(_v)
 
-    return cfg.getfloat(section, name)
+    return _cfg.getfloat(section, name)
 
 def getboolean(section, name, val=None):
     """get config param
@@ -254,9 +262,9 @@ def getboolean(section, name, val=None):
     :returns: config value
 
     """
-    global cfg
+    _cfg = _get_cfg()
 
-    if not cfg.has_option(section, name):
+    if not _cfg.has_option(section, name):
         _v = _get_sys_var(section, name, val)
         
         if _v is None:
@@ -264,7 +272,7 @@ def getboolean(section, name, val=None):
             
         return str(_v).lower() in ('true', '1', 'yes', 'y')
 
-    return cfg.getboolean(section, name)
+    return _cfg.getboolean(section, name)
 
 def getjson(section, name, val=None):
     """get config param
@@ -275,13 +283,13 @@ def getjson(section, name, val=None):
     :returns: config value
 
     """
-    global cfg
+    _cfg = _get_cfg()
 
     _v = None
-    if not cfg.has_option(section, name):
+    if not _cfg.has_option(section, name):
         _v = _get_sys_var(section, name, val)
     else:
-        _v = cfg.get(section, name)
+        _v = _cfg.get(section, name)
 
     if _v is None:
         return val
@@ -298,8 +306,7 @@ def has_option(section, name):
     :returns: config value
 
     """
-    global cfg
-    return cfg.has_option(section, name)
+    return _get_cfg().has_option(section, name)
 
 def main(opts):
     from gio import config
