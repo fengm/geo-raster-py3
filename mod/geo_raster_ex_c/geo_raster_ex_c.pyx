@@ -859,7 +859,8 @@ class geo_band_stack_zip:
         if len(_bnds) == 0:
             logging.warning('No images found')
             return None
-
+        
+        logging.info('loaded %s tiles' % len(_bnds))
         return geo_band_stack_zip(_bnds, _lyr.GetSpatialRef(), check_layers, nodata)
 
     def clean(self):
