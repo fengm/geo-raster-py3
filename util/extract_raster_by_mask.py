@@ -91,14 +91,9 @@ def main(opts):
 
     from gio import file_unzip
     import os
-    with file_unzip.file_unzip() as _zip:
-        _d_tmp = _zip.generate_file()
-        _f_tmp = os.path.join(_d_tmp, os.path.basename(opts.output))
-
-        os.makedirs(_d_tmp)
-        _bnd.save(_f_tmp, color_table=_clr, opts=['compress=lzw', 'tiled=yes'])
-
-        file_unzip.compress_folder(_d_tmp, os.path.dirname(os.path.abspath(opts.output)), [])
+    with file_unzip.zip() as _zip:
+        _bnd.color_table = _clr
+        _zip.save(_bnd, opts.output)
 
 def usage():
     _p = environ_mag.usage(False)
