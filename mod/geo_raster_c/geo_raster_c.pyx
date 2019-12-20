@@ -495,6 +495,8 @@ class geo_band_cache(geo_band_info):
 
         _row_s_s = 0
         _dat = _bnd.data
+        if _dat is None:
+            return None
 
         _col_t_s, _row_t_s = to_cell(tuple(bnd.geo_transform),
                 _ext_t.minx, _ext_t.maxy)

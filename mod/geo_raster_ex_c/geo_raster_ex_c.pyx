@@ -967,11 +967,15 @@ class geo_band_stack_zip:
 
     def _read_band(self, bnd, bnd_info, nodata, pol_t1, dat_out, min_val=None, max_val=None):
         import geo_base as gb
-        _buffer_dist = 1.0E-25
+        _buffer_dist = 1.0E-15
 
         _bnd_info = bnd_info
         _nodata = nodata
+
         _dat_out = dat_out
+        if _dat_out is None:
+            return
+
         _pol_t1 = pol_t1
 
         _bnd = _bnd_info.get_band().band
@@ -988,14 +992,6 @@ class geo_band_stack_zip:
             logging.debug('skip file #2 %s' % _bnd_info.band_file.file)
             return
         # _pol_t1_proj = _pol_t1_proj.buffer(_buffer_dist)
-
-        # if 'p166r061_20000223' in _bnd_info.band_file.file:
-        #     import geo_base as gb
-        #     _ttt = _pol_s.buffer(0.00000001).intersect(_pol_t1_proj)
-        #     print _ttt
-        #     print _ttt.poly
-        #     gb.output_polygons([_pol_s, _pol_t1_proj],
-        #             '/data/glcf-nx-002/data/PALSAR/water/region/country3/raw4/test2.shp')
 
         if not _pol_s.extent().is_intersect(_pol_t1_proj.extent()):
             return
@@ -1043,6 +1039,8 @@ class geo_band_stack_zip:
 
         _dat = _bnd.read_rows(_row_s_s,
                 min(_row_s_e + 2, _bnd.height) - _row_s_s)
+        if _dat is None:
+            return
 
         _col_t_s, _row_t_s = to_cell(tuple(bnd.geo_transform),
                 _ext_t.minx, _ext_t.maxy)
