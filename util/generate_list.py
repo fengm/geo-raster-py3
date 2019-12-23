@@ -107,7 +107,6 @@ def main(opts):
         run_commands.run(_cmd + ' -p sin')
         return
 
-    print('generate raster extent')
     run_commands.run(_cmd + _tsk)
 
 def usage():
