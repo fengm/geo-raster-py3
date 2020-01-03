@@ -223,7 +223,7 @@ class sr_dir(sr):
             return _bnd
             
         logging.warning('failed to find cfmask in (%s) (%s)' % \
-                    (str(self._fs.keys()), str(self._bs.keys())))
+                    (str(self._fs.keys()), str(self._bs)))
                     
         return None
 
