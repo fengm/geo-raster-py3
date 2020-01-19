@@ -72,7 +72,7 @@ def _get_tag(f):
 
     return ''
 
-def generate_shp(rs, f_out):
+def generate_shp(rs, ts, f_out):
     from gio import geo_base as gb
     from osgeo import ogr
     from gio import progress_percentage
@@ -87,7 +87,7 @@ def generate_shp(rs, f_out):
     os.path.exists(_tag) and _drv.DeleteDataSource(_tag)
     
     _shp = _drv.CreateDataSource(f_out)
-    _lyr = _shp.CreateLayer(_tag, gb.modis_projection(), ogr.wkbPolygon)
+    _lyr = _shp.CreateLayer(_tag, ts[0].proj_obj(), ogr.wkbPolygon)
 
     _fld = ogr.FieldDefn('FILE', ogr.OFTString)
     _fld.SetWidth(254)
@@ -166,7 +166,7 @@ def main(opts):
         _d_tmp = _zip.generate_file()
         os.makedirs(_d_tmp)
 
-        _nu, _cs = generate_shp(_rs, os.path.join(_d_tmp, os.path.basename(opts.output)))
+        _nu, _cs = generate_shp(_rs, _ts, os.path.join(_d_tmp, os.path.basename(opts.output)))
         if _nu <= 0:
             raise Exception('no valid image was found')
 
