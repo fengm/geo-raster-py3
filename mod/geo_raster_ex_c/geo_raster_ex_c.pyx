@@ -859,7 +859,7 @@ class geo_band_stack_zip:
         if len(_bnds) == 0:
             logging.warning('No images found')
             return None
-        
+
         logging.info('loaded %s tiles' % len(_bnds))
         return geo_band_stack_zip(_bnds, _lyr.GetSpatialRef(), check_layers, nodata)
 
@@ -1224,3 +1224,20 @@ def modis_projection():
     _modis_proj.ImportFromProj4('+proj=sinu +lon_0=0 +x_0=0 +y_0=0 +a=6371007.181 +b=6371007.181 +units=m +no_defs')
 
     return _modis_proj
+
+def read(f, bnd):
+    from . import file_mag
+
+    _f = str(f)
+    if _f.endswith('.shp') or _f.startswith('PG:'):
+        _shp = geo_band_stack_zip().from_shapefile(f, extent=bnd)
+
+        if _shp is None:
+            return None
+
+        return _shp.read_block(bnd)
+
+    from . import geo_raster as ge
+
+    _shp = ge.open(f)
+    return _shp.read_block(bnd)

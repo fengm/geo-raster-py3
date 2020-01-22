@@ -66,15 +66,17 @@ class metadata(object):
 	def save_txt(self, f_out):
 		'''save to a customized format'''
 		_ls = self._str(0)
-
-		with open(f_out, 'w') as _fo:
-			_fo.write('\n'.join(_ls))
+		
+		from . import file_unzip
+		with file_unzip.zip() as _zip:
+			_zip.save('\n'.join(_ls), f_out)
 
 	def __str__(self):
 		return '\n'.join(self._str(0))
 
 def load(f):
-	with open(f) as _fi:
+	from . import file_mag
+	with open(file_mag.get(f).get()) as _fi:
 		import json
 		# import collections
 		# _obj = json.load(_fi, object_hook=_to_obj, object_pairs_hook=collections.OrderedDict)
