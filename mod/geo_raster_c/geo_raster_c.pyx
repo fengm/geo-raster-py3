@@ -240,18 +240,18 @@ class geo_band_info(geo_raster_info):
         _cell = _geo[1]
 
         _s_x = _geo[0]
-        if _s_x > ext.minx:
-            _s_x -= (int((_s_x - ext.minx) / _cell) + 10)  * _cell
+        # if _s_x > ext.minx:
+        #    _s_x -= (int((_s_x - ext.minx) / _cell) + 10)  * _cell
 
         _s_y = _geo[3]
-        if _s_y < ext.maxy:
-            _s_y += (int((ext.maxy - _s_y) / _cell) + 10)  * _cell
+        # if _s_y < ext.maxy:
+        #    _s_y += (int((ext.maxy - _s_y) / _cell) + 10)  * _cell
 
         _min_x = align_min(ext.minx, _s_x, _cell)
         _max_x = align_max(ext.maxx, _s_x, _cell)
 
-        _min_y = align_max(ext.miny, _s_y, _cell)
-        _max_y = align_min(ext.maxy, _s_y, _cell)
+        _min_y = align_min(ext.miny, _s_y, _cell)
+        _max_y = align_max(ext.maxy, _s_y, _cell)
 
         if clip:
             _ref_min_x = _geo[0]

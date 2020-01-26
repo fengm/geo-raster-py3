@@ -1225,19 +1225,16 @@ def modis_projection():
 
     return _modis_proj
 
-def read(f, bnd):
-    from . import file_mag
+def read_block(f, bnd):
+    _bnd = load(f, bnd)
+    return _bnd.read_block(bnd)
 
+def load(f, bnd=None):
     _f = str(f)
     if _f.endswith('.shp') or _f.startswith('PG:'):
-        _shp = geo_band_stack_zip().from_shapefile(f, extent=bnd)
-
-        if _shp is None:
-            return None
-
-        return _shp.read_block(bnd)
+        logging.info('loading geo_band_stack %s' % _f)
+        _shp = geo_band_stack_zip.from_shapefile(f, extent=bnd)
+        return _shp
 
     from . import geo_raster as ge
-
-    _shp = ge.open(f)
-    return _shp.read_block(bnd)
+    return ge.open(f).get_band()
