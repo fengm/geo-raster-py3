@@ -796,14 +796,24 @@ class geo_band_stack_zip:
             file_unzip=None, check_layers=False, nodata=None, cache=None, extent=None):
         from osgeo import ogr
         import geo_base as gb
+        import os
 
+        logging.debug('loading from %s' % f_list)
+        
         import file_mag
         if isinstance(f_list, file_mag.obj_mag):
             _finp = f_list.get()
         elif f_list.startswith('s3://'):
+            logging.debug('loading s3 file %s' % f_list)
             _finp = file_mag.get(f_list).get()
         else:
             _finp = f_list
+            
+        if not _finp:
+            raise Exception('no valid file path provide %s' % _finp)
+            
+        if not os.path.exists(_finp):
+            raise Exception('failed to find %s' % _finp)
 
         _bnds = []
         _shp = ogr.Open(_finp)
