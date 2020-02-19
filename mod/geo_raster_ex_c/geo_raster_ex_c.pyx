@@ -1237,6 +1237,10 @@ def modis_projection():
 
 def read_block(f, bnd):
     _bnd = load(f, bnd)
+    
+    if _bnd is None:
+        return None
+        
     return _bnd.read_block(bnd)
 
 def load(f, bnd=None):
