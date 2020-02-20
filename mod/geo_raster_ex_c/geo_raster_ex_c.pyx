@@ -867,7 +867,7 @@ class geo_band_stack_zip:
                 band_idx, _name, file_unzip, cache)))
 
         if len(_bnds) == 0:
-            logging.warning('No images found')
+            logging.info('No images loaded')
             return None
 
         logging.info('loaded %s tiles' % len(_bnds))
