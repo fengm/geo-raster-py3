@@ -1010,7 +1010,7 @@ class geo_band_stack_zip:
         _pol_c_s = _pol_s.intersect(_pol_t1_proj)
         if _pol_c_s.poly is None:
             _pol_c_s = _pol_s.buffer(_buffer_dist).intersect(_pol_t1_proj.buffer(_buffer_dist))
-            logging.warning('apply buffer to solve geometric conflicts')
+            logging.info('apply buffer to solve geometric conflicts')
 
         if _pol_c_s.poly is None:
             logging.debug('skip file #3 %s' % _bnd_info.band_file.file)
