@@ -796,14 +796,24 @@ class geo_band_stack_zip:
             file_unzip=None, check_layers=False, nodata=None, cache=None, extent=None):
         from osgeo import ogr
         import geo_base as gb
+        import os
 
+        logging.debug('loading from %s' % f_list)
+        
         import file_mag
         if isinstance(f_list, file_mag.obj_mag):
             _finp = f_list.get()
         elif f_list.startswith('s3://'):
+            logging.debug('loading s3 file %s' % f_list)
             _finp = file_mag.get(f_list).get()
         else:
             _finp = f_list
+            
+        if not _finp:
+            raise Exception('no valid file path provide %s' % _finp)
+            
+        if not os.path.exists(_finp):
+            raise Exception('failed to find %s' % _finp)
 
         _bnds = []
         _shp = ogr.Open(_finp)
@@ -857,7 +867,7 @@ class geo_band_stack_zip:
                 band_idx, _name, file_unzip, cache)))
 
         if len(_bnds) == 0:
-            logging.warning('No images found')
+            logging.info('No images loaded')
             return None
 
         logging.info('loaded %s tiles' % len(_bnds))
@@ -1000,7 +1010,7 @@ class geo_band_stack_zip:
         _pol_c_s = _pol_s.intersect(_pol_t1_proj)
         if _pol_c_s.poly is None:
             _pol_c_s = _pol_s.buffer(_buffer_dist).intersect(_pol_t1_proj.buffer(_buffer_dist))
-            logging.warning('apply buffer to solve geometric conflicts')
+            logging.info('apply buffer to solve geometric conflicts')
 
         if _pol_c_s.poly is None:
             logging.debug('skip file #3 %s' % _bnd_info.band_file.file)
@@ -1227,6 +1237,10 @@ def modis_projection():
 
 def read_block(f, bnd):
     _bnd = load(f, bnd)
+    
+    if _bnd is None:
+        return None
+        
     return _bnd.read_block(bnd)
 
 def load(f, bnd=None):

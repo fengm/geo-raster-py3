@@ -434,8 +434,8 @@ class geo_band_cache(geo_band_info):
             _off_y2 = int((ext.maxy - _ext.maxy) / _cell)
 
         import math
-        _w = int(math.ceil((_ext.width() / _cell)))
-        _h = int(math.ceil((_ext.height() / _cell)))
+        _w = min(_cols, int(math.ceil((_ext.width() / _cell))))
+        _h = min(_rows, int(math.ceil((_ext.height() / _cell))))
 
         _dat[_off_y2: _off_y2 + _h, _off_x2: _off_x2 + _w] = \
                 self.data[_off_y1: _off_y1 + _h, _off_x1: _off_x1 + _w]
