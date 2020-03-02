@@ -12,7 +12,6 @@ Note: add the function for calculating STD for each averaged pixel
 '''
 
 import numpy as np
-import geo_raster as ge
 import math
 import logging
 import collections
@@ -53,10 +52,11 @@ def mean(bnd_in, bnd_ot, float v_min=0, float v_max=100):
     if bnd_in.data.dtype != np.float32:
         _dat = _dat.astype(bnd_in.data.dtype)
 
+    from . import geo_raster as ge
     return ge.geo_band_cache(_dat, _geo_ot, bnd_ot.proj,
                 _nodata, bnd_in.pixel_type)
 
-def median(bnd_in, bnd_ot, pro_nodata):
+def median(bnd_in, bnd_ot, pro_nodata, zero_rate=1.0):
     if bnd_in is None:
         return None
     if bnd_ot is None:
@@ -81,11 +81,12 @@ def median(bnd_in, bnd_ot, pro_nodata):
 
     _dat = median_pixels(_dat,
             _offs[0], _offs[1], _dive,
-            _nodata, _size[0], _size[1], pro_nodata)
+            _nodata, _size[0], _size[1], pro_nodata, zero_rate=zero_rate)
 
     if bnd_in.data.dtype != np.int16:
         _dat = _dat.astype(bnd_in.data.dtype)
 
+    from . import geo_raster as ge
     return ge.geo_band_cache(_dat, _geo_ot, bnd_ot.proj,
                 _nodata, bnd_in.pixel_type)
 
@@ -117,6 +118,7 @@ def mean_std(bnd_in, bnd_ot):
     if bnd_in.data.dtype != np.float32:
         _dat = _dat.astype(bnd_in.data.dtype)
 
+    from . import geo_raster as ge
     return ge.geo_band_cache(_dat, _geo_ot, bnd_ot.proj,
                 _nodata, ge.pixel_type('float'))
 
@@ -290,7 +292,7 @@ cdef np.ndarray[np.float32_t, ndim=2] average_std(np.ndarray[np.float32_t, ndim=
 
     return _dat
 
-def dominated(bnd_in, bnd_ot, pro_nodata):
+def dominated(bnd_in, bnd_ot, pro_nodata, min_rate=0.2):
     if bnd_in is None:
         return None
     if bnd_ot is None:
@@ -315,17 +317,18 @@ def dominated(bnd_in, bnd_ot, pro_nodata):
 
     _dat = dominated_pixels(_dat,
             _offs[0], _offs[1], _dive,
-            _nodata, _size[0], _size[1], pro_nodata)
+            _nodata, _size[0], _size[1], pro_nodata, min_rate)
 
     if bnd_in.data.dtype != np.int16:
         _dat = _dat.astype(bnd_in.data.dtype)
 
+    from . import geo_raster as ge
     return ge.geo_band_cache(_dat, _geo_ot, bnd_ot.proj,
                 _nodata, bnd_in.pixel_type)
 
 cdef np.ndarray[np.int16_t, ndim=2] dominated_pixels(np.ndarray[np.int16_t, ndim=2] dat,
         float off_y, float off_x, float scale,
-        int nodata, unsigned int rows, unsigned int cols, pro_nodata):
+        int nodata, unsigned int rows, unsigned int cols, pro_nodata, min_rate):
 
     cdef unsigned int _rows_o, _cols_o
     cdef unsigned int _rows_n, _cols_n
@@ -345,7 +348,7 @@ cdef np.ndarray[np.int16_t, ndim=2] dominated_pixels(np.ndarray[np.int16_t, ndim
     cdef float _row_min_f, _row_max_f
     cdef float _col_min_f, _col_max_f
 
-    cdef double _ns
+    cdef double _ns, _as
     cdef float _a
     cdef int _tp, _vv
 
@@ -382,7 +385,8 @@ cdef np.ndarray[np.int16_t, ndim=2] dominated_pixels(np.ndarray[np.int16_t, ndim
             _col_max = min(_cols_o, _col_max)
 
             _vs = {}
-            _ns = 0
+            _ns = 0.0
+            _as = 0.0
             _tp = False
 
             for _row_o from _row_min<=_row_o<_row_max:
@@ -394,6 +398,8 @@ cdef np.ndarray[np.int16_t, ndim=2] dominated_pixels(np.ndarray[np.int16_t, ndim
 
                     if _a < 0.5:
                         continue
+
+                    _as += _a
 
                     _v = dat[_row_o, _col_o]
                     if _v == _nodata:
@@ -412,6 +418,9 @@ cdef np.ndarray[np.int16_t, ndim=2] dominated_pixels(np.ndarray[np.int16_t, ndim
             if _ns <= 0 or _tp:
                 continue
 
+            if (_ns / _as) < min_rate:
+                continue
+
             _mx = 0
             _vv == _nodata
             for _kk in _vs:
@@ -425,7 +434,7 @@ cdef np.ndarray[np.int16_t, ndim=2] dominated_pixels(np.ndarray[np.int16_t, ndim
 
 cdef np.ndarray[np.int16_t, ndim=2] median_pixels(np.ndarray[np.int16_t, ndim=2] dat,
         float off_y, float off_x, float scale,
-        int nodata, unsigned int rows, unsigned int cols, pro_nodata):
+        int nodata, unsigned int rows, unsigned int cols, pro_nodata, zero_rate):
 
     cdef unsigned int _rows_o, _cols_o
     cdef unsigned int _rows_n, _cols_n
@@ -451,6 +460,8 @@ cdef np.ndarray[np.int16_t, ndim=2] median_pixels(np.ndarray[np.int16_t, ndim=2]
 
     cdef int _nodata
     _nodata = nodata
+
+    import random
 
     _dat = np.empty([_rows_n, _cols_n], np.int16)
     _dat.fill(_nodata)
@@ -503,6 +514,15 @@ cdef np.ndarray[np.int16_t, ndim=2] median_pixels(np.ndarray[np.int16_t, ndim=2]
                         else:
                             continue
 
+                    if _v == 0:
+                        if zero_rate <= 0:
+                            continue
+
+                        if len(_vs) > 0:
+                            if zero_rate < 1.0:
+                                if random.random() > zero_rate:
+                                    continue
+
                     _ns += _a
                     _vs.append(_v)
 
@@ -521,7 +541,7 @@ cdef np.ndarray[np.int16_t, ndim=2] median_pixels(np.ndarray[np.int16_t, ndim=2]
                     _vv = _vs[0]
                 else:
                     _vs.sort()
-                    _vv = _vs[_len / 2]
+                    _vv = _vs[int(_len / 2)]
 
             _dat[_row_n, _col_n] = _vv
 
@@ -552,8 +572,8 @@ def perc(bnd_in, bnd_ot, val, valid_values=None, excluded_values=None, nodata=25
             _offs[0], _offs[1], _dive, val, valid_values, excluded_values,
             bnd_in.nodata, nodata, _size[0], _size[1], 1 if exclude_nodata else 0, int(scale))
 
-    import geo_raster as ge
-    import geo_base as gb
+    from . import geo_raster as ge
+    from . import geo_base as gb
 
     _pt = ge.pixel_type(pixel_type)
     return ge.geo_band_cache(_dat.astype(gb.to_dtype(_pt)), _geo_ot, bnd_ot.proj, 
