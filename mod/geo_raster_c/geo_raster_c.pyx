@@ -1020,6 +1020,10 @@ class geo_raster(geo_raster_info):
 
     @staticmethod
     def open(f, update=False, check_exist=True):
+        if not f:
+            logging.warning('requested for empty path')
+            return None
+            
         import re
 
         _f = f

@@ -1244,6 +1244,9 @@ def read_block(f, bnd):
     return _bnd.read_block(bnd)
 
 def load(f, bnd=None):
+    if not f:
+        return None
+        
     _f = str(f)
     if _f.endswith('.shp') or _f.startswith('PG:'):
         logging.info('loading geo_band_stack %s' % _f)
