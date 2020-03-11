@@ -1111,7 +1111,7 @@ class geo_raster(geo_raster_info):
 
     def get_band(self, band_num=1, cache=False):
         if not (1 <= band_num <= self.band_num):
-            raise Exception('band index is not availible (bands %d)' % self.band_num)
+            raise Exception('band index is not availible (bands %d/%d)' % (band_num, self.band_num))
 
         _bnd = geo_band(self, self.raster.GetRasterBand(band_num))
         if cache:
