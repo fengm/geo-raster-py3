@@ -36,6 +36,9 @@ class file_mag(obj_mag):
         obj_mag.__init__(self)
 
     def exists(self):
+        if not self._f:
+            return False
+            
         import os
         return os.path.exists(self._f)
 
@@ -106,15 +109,21 @@ class s3_mag(obj_mag):
         obj_mag.__init__(self)
 
     def exists(self):
+        if not self._path:
+            return False
+            
         return self._s3.exists(self._path)
-        # return self._s3.get_key(self._path) is not None
 
     def get(self):
+        if not self._path:
+            return None
+            
         _o = self._s3.get(self._path)
         if _o:
             if self._path.endswith('.shp'):
                 for _e in ['.prj', '.shx', '.dbf']:
                     self._s3.get(self._path[:-4] + _e)
+        
         return _o
     
     def _list(self, d, fs):
