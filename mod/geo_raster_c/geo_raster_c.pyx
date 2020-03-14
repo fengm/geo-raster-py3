@@ -381,6 +381,10 @@ class geo_band_cache(geo_band_info):
             _pixel_type = gdal.GDT_Byte
             
         _color_table = color_table if color_table else self.color_table
+        if _color_table:
+            from gio import file_mag
+            _color_table = file_mag.get(_color_table).get()
+            
         write_raster(f, self.geo_transform, self.proj.ExportToWkt(), \
                 self.data, nodata=self.nodata, pixel_type=_pixel_type, \
                 driver=driver, color_table=_color_table, opts=opts)
