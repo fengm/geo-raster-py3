@@ -529,6 +529,9 @@ class geo_band_cache(geo_band_info):
         elif self.pixel_type == 6:
             geo_base.read_block_float32(_dat, _ext_t_cs, _prj,
                     _bnd.geo_transform, _nodata, _row_s_s, _dat_out)
+        elif self.pixel_type == 7:
+            geo_base.read_block_float64(_dat, _ext_t_cs, _prj,
+                    _bnd.geo_transform, _nodata, _row_s_s, _dat_out)
         else:
             raise Exception('The pixel type is not supported ' + \
                     str(self.pixel_type))
@@ -947,6 +950,9 @@ class geo_band(geo_band_info):
         elif self.pixel_type == 6:
             geo_base.read_block_float32(_dat, _ext_t_cs, _prj,
                     _bnd.geo_transform, _nodata, _row_s_s, _dat_out)
+        elif self.pixel_type == 7:
+            geo_base.read_block_float64(_dat, _ext_t_cs, _prj,
+                    _bnd.geo_transform, _nodata, _row_s_s, _dat_out)
         else:
             raise Exception('The pixel type is not supported ' + \
                     str(self.pixel_type))
@@ -1105,7 +1111,7 @@ class geo_raster(geo_raster_info):
 
     def get_band(self, band_num=1, cache=False):
         if not (1 <= band_num <= self.band_num):
-            raise Exception('band index is not availible (bands %d)' % self.band_num)
+            raise Exception('band index is not availible (bands %d/%d)' % (band_num, self.band_num))
 
         _bnd = geo_band(self, self.raster.GetRasterBand(band_num))
         if cache:
