@@ -54,8 +54,8 @@ def _format_url(f):
 
     _f = f
 
-    _f = re.sub('h\d+', '%(col)s', _f)
-    _f = re.sub('v\d+', '%(row)s', _f)
+    _f = re.sub('h\d\d\d+', '%(col)s', _f)
+    _f = re.sub('v\d\d\d+', '%(row)s', _f)
 
     return _f
 
@@ -187,6 +187,7 @@ def usage():
 
     _p.add_argument('-i', '--input', dest='input', required=True)
     _p.add_argument('-c', '--cache', dest='cache')
+    _p.add_argument('-f', '--format-url', dest='format_url', type='bool', default=True)
     _p.add_argument('--check-image', dest='check_image', action='store_true')
     _p.add_argument('--over-write', '--over-write', dest='over_write', action='store_true', default=False)
     _p.add_argument('-e', '--ext', dest='ext', required=True)
