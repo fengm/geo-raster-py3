@@ -41,7 +41,7 @@ def usage():
 
     _p.add_argument('-r', '--region', dest='region', required=True)
     _p.add_argument('-i', '--image-size', dest='image_size', type=int, required=True)
-    _p.add_argument('--geog', dest='geog', type='bool', default=False)
+    _p.add_argument('--geog', dest='geog', type='bool', default=True)
     _p.add_argument('--cell-size', dest='cell_size', type=float, default=30.0)
     _p.add_argument('--edge-cell', dest='edge_cell', type=int, default=1)
     _p.add_argument('--over-write', dest='over_write', type='bool')
