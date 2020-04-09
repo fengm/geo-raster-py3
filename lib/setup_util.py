@@ -6,6 +6,19 @@ Create: 2016-12-10 14:47:36
 Description: help running setup.py
 '''
 
+def _parse_opts():
+    import sys
+    
+    _as = sys.argv
+    
+    _ps = {}
+    _pp = ['--overwrite-config']
+    for _p in _pp:
+        _ps[_p] = _p in _as
+    
+    sys.argv = [_p for _p in _as if _p not in _pp]
+    return _ps
+
 def init(tag):
     import setuptools
     from Cython.Distutils import build_ext
@@ -13,6 +26,7 @@ def init(tag):
     import numpy
 
     _package = tag
+    _opts = _parse_opts()
 
     # import sys
     # _path = lambda x: os.path.join(sys.path[0], x)
@@ -78,7 +92,7 @@ def init(tag):
                     _f_inp = os.path.join(_root, _file)
                     _f_out = os.path.join(_root.replace(_path('etc'), _d_ini), _file)
 
-                    if os.path.exists(_f_out):
+                    if not _opts['--overwrite-config'] and os.path.exists(_f_out):
                         print(' - skip existed config file', _file)
                         continue
 
