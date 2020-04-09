@@ -17,7 +17,7 @@ cimport cython
 @cython.boundscheck(False)
 @cython.wraparound(False)
 
-def filter_band_median(bnd, s=1, it=1):
+def filter_band_median(bnd, s=1, it=1, min_area=0):
     from gio import mod_filter
     from gio import stat_band
     from gio import config
@@ -39,6 +39,13 @@ def filter_band_median(bnd, s=1, it=1):
             break
 
     bnd.nodata = _nodata
+    
+    if min_area > 0:
+        from skimage import morphology
+        _dat = bnd.data
+        _dat = morphology.area_closing(_dat, min_area)    
+        _dat = morphology.area_opening(_dat, min_area)
+        bnd.data = _dat
 
 def median(bnd, float dis, vs=None):
     cdef int _rows = bnd.height, _cols = bnd.width
