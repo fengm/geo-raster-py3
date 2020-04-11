@@ -22,9 +22,10 @@ def filter_band_mmu(bnd, num=3, area=None):
     
     _num = num
     if area is not None:
-        _num = int(area / (bnd.cell_size ** 2))
-    
-    _num = max(num, _num)
+        _area = area
+        if bnd.proj.IsGeographic():
+            _area = _area / (120000 ** 2)
+        _num = max(_num, int(_area / (bnd.cell_size ** 2)))
     
     _dat = bnd.data
     _dat = morphology.area_closing(_dat, _num)
