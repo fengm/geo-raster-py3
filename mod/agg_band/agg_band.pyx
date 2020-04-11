@@ -292,7 +292,7 @@ cdef np.ndarray[np.float32_t, ndim=2] average_std(np.ndarray[np.float32_t, ndim=
 
     return _dat
 
-def dominated(bnd_in, bnd_ot, pro_nodata, min_rate=0.2):
+def dominated(bnd_in, bnd_ot, weights=None):
     if bnd_in is None:
         return None
     if bnd_ot is None:
@@ -317,7 +317,7 @@ def dominated(bnd_in, bnd_ot, pro_nodata, min_rate=0.2):
 
     _dat = dominated_pixels(_dat,
             _offs[0], _offs[1], _dive,
-            _nodata, _size[0], _size[1], pro_nodata, min_rate)
+            _nodata, _size[0], _size[1], weights)
 
     if bnd_in.data.dtype != np.int16:
         _dat = _dat.astype(bnd_in.data.dtype)
@@ -328,7 +328,7 @@ def dominated(bnd_in, bnd_ot, pro_nodata, min_rate=0.2):
 
 cdef np.ndarray[np.int16_t, ndim=2] dominated_pixels(np.ndarray[np.int16_t, ndim=2] dat,
         float off_y, float off_x, float scale,
-        int nodata, unsigned int rows, unsigned int cols, pro_nodata, min_rate):
+        int nodata, unsigned int rows, unsigned int cols, weights):
 
     cdef unsigned int _rows_o, _cols_o
     cdef unsigned int _rows_n, _cols_n
@@ -402,12 +402,12 @@ cdef np.ndarray[np.int16_t, ndim=2] dominated_pixels(np.ndarray[np.int16_t, ndim
                     _as += _a
 
                     _v = dat[_row_o, _col_o]
-                    if _v == _nodata:
-                        if pro_nodata:
-                            _tp = True
-                            break
-                        else:
-                            continue
+                    # if _v == _nodata:
+                    #     if pro_nodata:
+                    #         _tp = True
+                    #         break
+                    #     else:
+                    #         continue
 
                     _ns += _a
                     _vs[_v] = _vs.get(_v, 0) + 1
@@ -417,9 +417,16 @@ cdef np.ndarray[np.int16_t, ndim=2] dominated_pixels(np.ndarray[np.int16_t, ndim
 
             if _ns <= 0 or _tp:
                 continue
+            
+            # if len(_vs.keys()) == 1:
+            #     _dat[_row_n, _col_n] = list(_vs.values())[0]
+            #     continue
 
-            if (_ns / _as) < min_rate:
-                continue
+            if weights is not None and len(weights) > 0:
+                for _w_min, _w_max, _w_wet in weights:
+                    for _kk in _vs:
+                        if _w_min <= _kk <= _w_max:
+                            _vs[_kk] *= _w_wet
 
             _mx = 0
             _vv == _nodata
