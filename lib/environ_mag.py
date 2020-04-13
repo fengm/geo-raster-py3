@@ -16,7 +16,7 @@ def usage(multi_task=False):
 
     _p.add_argument('--logging', dest='logging')
     _p.add_argument('--config', dest='config', nargs='+')
-    _p.add_argument('--env', dest='env', nargs='+')
+    _p.add_argument('--env', dest='env', nargs='+', action='append')
     _p.add_argument('--debug', dest='debug', action='store_true')
     _p.add_argument('--no-clean', dest='no_clean', action='store_true', help='deprecated')
     _p.add_argument('--clean', dest='clean', type='bool', default=False)
@@ -81,27 +81,39 @@ def _parse_env(opts):
     from gio import config
     import logging
     import re
+    
+    if not opts.env or len(opts.env) <= 0:
+        return
+    
+    _env = None
+    for _e in opts.env:
+        if _env is None:
+            _env = _e
+        else:
+            _env.extend(_e)
+    
+    if not _env:
+        return
+    
+    for _e in _env:
+        _es = re.split('\s*\=\s*', _e.strip())
+        if len(_es) != 2:
+            raise Exception('failed to parse environment variable (%s)' % _e)
 
-    if opts.env:
-        for _e in opts.env:
-            _es = re.split('\s*\=\s*', _e.strip())
-            if len(_es) != 2:
-                raise Exception('failed to parse environment variable (%s)' % _e)
+        _ns = re.split('[\/\.]', _es[0])
+        if len(_ns) > 2:
+            raise Exception('failed to parse environment name (%s)' % _es[0])
 
-            _ns = re.split('[\/\.]', _es[0])
-            if len(_ns) > 2:
-                raise Exception('failed to parse environment name (%s)' % _es[0])
-
-            if len(_ns) == 1:
-                _n0 = 'conf'
-                _n1 = _es[0]
-            else:
-                _n0 = _ns[0]
-                _n1 = _ns[1]
+        if len(_ns) == 1:
+            _n0 = 'conf'
+            _n1 = _es[0]
+        else:
+            _n0 = _ns[0]
+            _n1 = _ns[1]
+        
+        logging.info('env %s.%s=%s' % (_n0, _n1, _es[1]))
+        config.set(_n0, _n1, _es[1])
             
-            logging.info('env %s.%s=%s' % (_n0, _n1, _es[1]))
-            config.set(_n0, _n1, _es[1])
-
 def run(func, opts):
     import logging
     from . import config
