@@ -32,7 +32,7 @@ def run(cmd, shell=True, cwd=None, env=None, stdout=None, stderr=None, raise_exc
 	if type(cmd) == tuple or type(cmd) == list:
 		_shell = False
 
-	logging.debug('run %scmd: "%s"' % ('shell ' if _shell else '', str(cmd)))
+	logging.info('run %scmd: "%s"' % ('shell ' if _shell else '', str(cmd)))
 
 	import subprocess
 	_stdout = stdout if stdout else subprocess.PIPE
