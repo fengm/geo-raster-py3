@@ -124,7 +124,8 @@ def run(func, opts):
 
     logging_util.info(('CMD (%s): ' % os.getcwd()) + ' '.join(['"%s"' % x if ' ' in x else x for x in sys.argv]))
     _parse_env(opts[0])
-
+    
+    os.environ['PATH'] = '.' + os.pathsep + sys.argv[0] + os.pathsep + os.environ['PATH']
     with file_unzip.file_unzip() as _zip:
         _tmp = _zip.generate_file()
         config.set('conf', 'temp', _tmp)
