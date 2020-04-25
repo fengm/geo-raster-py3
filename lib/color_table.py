@@ -61,7 +61,7 @@ class color_table:
                 continue
     
             _cc = tuple(map(int, _vv[1:5]))
-            _cs[_n] = _cc
+            _cs[int(_vv[0])] = _cc
     
             _n += 1
     
@@ -124,12 +124,12 @@ class color_table:
             for _n in range(_div):
                 _v, _c = self._interpolate(_a)
 
-                if _v not in _colors:
+                if _v not in _values:
                     _values[_a] = _v
                     _colors[_v] = _c
 
                 _a += _d
-
+                
         self._values = _values
         self._colors = _colors
 
@@ -181,7 +181,7 @@ class color_table:
 
             _vs.append({'d': abs(_v - v), 'c': self._values[_v]})
 
-        _cc = sorted(_vs, cmp=lambda x1, x2: cmp(x1['d'], x2['d']))[0]['c']
+        _cc = sorted(_vs, key=lambda x: x['d'])[0]['c']
         return _cc
 
     def get_color(self, v, clip=False):
@@ -195,12 +195,14 @@ class color_table:
     def _interpolate(self, v):
         _vs = self._vs
         _cs = self._cs
+        
+        if v == _vs[-1]:
+            return v, _cs[-1]
 
         _v = max(min(_vs), min(v, max(_vs) - 0.000000000001))
         _dv = float(250) / (len(_vs) - 1)
 
         _pp = 0.0
-
         for _i in range(len(_vs) - 1):
             _ds = abs(_v - _vs[_i])
             _ps = int(_pp)
