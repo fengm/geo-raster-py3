@@ -54,6 +54,7 @@ def config(p, enable_multi_processing=True):
     config.load(_opts.config)
 
     set_config_items(_opts)
+    _parse_env(_opts)
 
     from gio import logging_util
     logging_util.init(_opts.logging, enable_multi_processing)
@@ -77,7 +78,7 @@ def _opts_to_str(opts):
     
     return '; '.join(_vs)
 
-def _parse_env(opts):
+def _parse_env(opts, log=False):
     from gio import config
     import logging
     import re
@@ -103,16 +104,18 @@ def _parse_env(opts):
         _ns = re.split('[\/\.]', _es[0])
         if len(_ns) > 2:
             raise Exception('failed to parse environment name (%s)' % _es[0])
-
+            
         if len(_ns) == 1:
             _n0 = 'conf'
-            _n1 = _es[0]
+            _n1 = _ns[0]
         else:
             _n0 = _ns[0]
             _n1 = _ns[1]
         
-        logging.info('env %s.%s=%s' % (_n0, _n1, _es[1]))
-        config.set(_n0, _n1, _es[1])
+        if log:
+            logging.info('env %s.%s=%s' % (_n0, _n1, _es[1]))
+        else:
+            config.set(_n0, _n1, _es[1])
             
 def run(func, opts):
     import logging
@@ -123,7 +126,7 @@ def run(func, opts):
     from . import logging_util
 
     logging_util.info(('CMD (%s): ' % os.getcwd()) + ' '.join(['"%s"' % x if ' ' in x else x for x in sys.argv]))
-    _parse_env(opts[0])
+    _parse_env(opts[0], log=True)
     
     os.environ['PATH'] = '.' + os.pathsep + sys.argv[0] + os.pathsep + os.environ['PATH']
     with file_unzip.file_unzip() as _zip:

@@ -79,7 +79,7 @@ def init(f=None, enable_multi_processing=False):
 
     _level_out = config.getint('conf', 'log_out_level', _env_int_val('LOG_OUT_LEVEL', -1))
     _level_std = config.getint('conf', 'log_std_level', _env_int_val('LOG_STD_LEVEL', -1))
-
+    
     _log.setLevel(logging.DEBUG)
 
     if len(_log.handlers) == 0:
