@@ -98,8 +98,13 @@ def load(f_cfg=None, defaults=None, dict_type=collections.OrderedDict, allow_no_
         
         # support S3 config file
         if _f.startswith('s3://'):
-            _f_out = os.path.abspath(os.path.join('int', _f[5:]))
-            os.system('aws s3 cp %s %s' %  (_f, _f_out))
+            _d_ini = os.environ['G_INI']
+            if not _d_ini:
+                raise Exception('failed to find the G_INI environ')
+                
+            _f_out = os.path.abspath(os.path.join(_d_ini, os.path.basename(_f)))
+            if not os.path.exists(_f_out):
+                os.system('aws s3 cp %s %s' %  (_f, _f_out))
             _f = _f_out
 
         if _f and os.path.exists(_f):
