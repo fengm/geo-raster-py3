@@ -86,7 +86,7 @@ def main(opts):
 
         global_task.save(_ts, _f_mak, \
                 {'input': opts.input, 'output': opts.output, 'edge': _edge, \
-                    't': _tag, 'proj': _proj})
+                    't': _tag, 'proj': _proj.ExportToProj4()})
     else:
         _gs = global_task.loads(_f_mak)
         _ms = _gs['params']

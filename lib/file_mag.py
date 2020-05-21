@@ -160,8 +160,12 @@ class s3_mag(obj_mag):
             self._s3.clean()
 
 def get(f):
-    if f.startswith('s3://'):
-        return s3_mag(f)
+    if not f:
+        return None
+        
+    _f = f.strip()
+    if _f.startswith('s3://'):
+        return s3_mag(_f)
 
-    return file_mag(f)
+    return file_mag(_f)
 
