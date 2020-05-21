@@ -51,7 +51,6 @@ def config(p, enable_multi_processing=True):
     _opts = p.parse_args()
 
     from gio import config
-    print('eeeeee', _opts.config)
     config.load(_opts.config)
 
     set_config_items(_opts)
