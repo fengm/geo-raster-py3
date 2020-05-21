@@ -46,6 +46,9 @@ def _task(tile, u, image_check=False):
 
     if _o.exists():
         return (tile, _f, check_image(_o) if image_check else 2)
+    
+    import logging
+    logging.info('failed to find %s' % _f)
 
     return None
 
@@ -143,8 +146,8 @@ def main(opts):
         return
     
     _u = _format_url(opts.ext)
-    if not _u.startswith('s3://'):
-        _u = os.path.join(opts.input, _u)
+    # if not _u.startswith('s3://'):
+    #     _u = os.path.join(opts.input, _u)
 
     print('url:', _u)
     logging.info('url: %s' % _u)
@@ -160,6 +163,7 @@ def main(opts):
 
     from gio import multi_task
     _rs = multi_task.run(_task, [(_r, _u, opts.check_image) for _r in multi_task.load(_ts, opts)], opts)
+    print('')
 
     from gio import file_unzip
     with file_unzip.file_unzip() as _zip:

@@ -92,6 +92,9 @@ def load(f_cfg=None, defaults=None, dict_type=collections.OrderedDict, allow_no_
 
     for _f in (f_cfg if (isinstance(f_cfg, list) or isinstance(f_cfg, tuple)) else [f_cfg]):
         if not _f:
+            _l = _detect_file(None)
+            if _l:
+                _fs.append(_l)
             continue
         
         _f = _f.strip()
@@ -107,7 +110,7 @@ def load(f_cfg=None, defaults=None, dict_type=collections.OrderedDict, allow_no_
                 os.system('aws s3 cp %s %s' %  (_f, _f_out))
             _f = _f_out
 
-        if _f and os.path.exists(_f):
+        if os.path.exists(_f):
             if os.path.isdir(_f):
                 _fs.extend(_load_dir(_f))
                 continue
@@ -117,10 +120,10 @@ def load(f_cfg=None, defaults=None, dict_type=collections.OrderedDict, allow_no_
                 continue
             
         _l = _detect_file(_f)
-        if _l == None:
-            continue
+        if not _l:
+            _fs.append(_l)
 
-        _fs.append(_l)
+    print('loading config', _fs)
 
     for _l in _fs:
         logging.info('loading config file: %s' % _l)
