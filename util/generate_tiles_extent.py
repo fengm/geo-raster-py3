@@ -52,10 +52,17 @@ def _task(tile, u, image_check=False):
 
     return None
 
-def _format_url(f):
+def _format_url(inp, f):
     import re
 
     _f = f
+    if '/' not in _f and '\\' not in _f:
+        _t = _f
+        if _t.startswith('_'):
+            _t = _t[1:]
+
+        import os
+        _f = os.path.join(inp, 'data/h001/v001/h001v001/h001v001_%s' % (_t))
 
     _f = re.sub('h\d\d\d+', '%(col)s', _f)
     _f = re.sub('v\d\d\d+', '%(row)s', _f)
@@ -145,15 +152,15 @@ def main(opts):
         logging.warning('skip processed %s' % opts.output)
         return
     
-    _u = _format_url(opts.ext)
+    _d_inp = config.get('conf', 'input')
+    _f_mak = file_mag.get(os.path.join(_d_inp, 'tasks.txt'))
+
+    _u = _format_url(_d_inp, opts.ext)
     # if not _u.startswith('s3://'):
     #     _u = os.path.join(opts.input, _u)
 
     print('url:', _u)
     logging.info('url: %s' % _u)
-
-    _d_inp = config.get('conf', 'input')
-    _f_mak = file_mag.get(os.path.join(_d_inp, 'tasks.txt'))
 
     from gio import global_task
     if not _f_mak.exists():
