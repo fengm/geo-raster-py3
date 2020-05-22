@@ -123,8 +123,6 @@ def load(f_cfg=None, defaults=None, dict_type=collections.OrderedDict, allow_no_
         if not _l:
             _fs.append(_l)
 
-    print('loading config', _fs)
-
     for _l in _fs:
         logging.info('loading config file: %s' % _l)
 
