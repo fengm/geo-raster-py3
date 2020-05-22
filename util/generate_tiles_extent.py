@@ -153,6 +153,10 @@ def main(opts):
         return
     
     _d_inp = config.get('conf', 'input')
+
+    if not _d_inp.startswith('s3://'):
+        _d_inp = os.path.abspath(_d_inp)
+
     _f_mak = file_mag.get(os.path.join(_d_inp, 'tasks.txt'))
 
     _u = _format_url(_d_inp, opts.ext)
