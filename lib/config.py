@@ -120,7 +120,7 @@ def load(f_cfg=None, defaults=None, dict_type=collections.OrderedDict, allow_no_
                 continue
             
         _l = _detect_file(_f)
-        if not _l:
+        if _l:
             _fs.append(_l)
 
     for _l in _fs:
