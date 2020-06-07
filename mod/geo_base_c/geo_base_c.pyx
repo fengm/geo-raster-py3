@@ -910,17 +910,28 @@ def output_geometries(geos, proj, geo_type, f_shp):
     from osgeo import ogr, gdal
     import os
 
-    logging.debug('output shapefile to ' + f_shp)
     _drv_type = 'ESRI Shapefile'
     if f_shp.lower().endswith('.kml'):
         _drv_type = 'KML'
-
+    if f_shp.lower().endswith('.geojson'):
+        _drv_type = 'GeoJSON'
+        
+    logging.info('output shapefile to %s (%s)' % (f_shp, _drv_type))
+    
     _drv = ogr.GetDriverByName(_drv_type)
     if os.path.exists(f_shp):
         _drv.DeleteDataSource(f_shp)
 
     _shp = _drv.CreateDataSource(f_shp)
-    _lyr = _shp.CreateLayer(f_shp[:-4], proj, geo_type)
+    if _shp is None:
+        logging.error('failed to create file %s' % f_shp)
+        return
+    
+    _tag = os.path.splitext(os.path.basename(f_shp))[0]
+    _lyr = _shp.CreateLayer(_tag, proj, geo_type)
+    if _shp is None:
+        logging.error('failed to create create %s' % _tag)
+        return
 
     for _geo in geos:
         _fea = ogr.Feature(_lyr.GetLayerDefn())
