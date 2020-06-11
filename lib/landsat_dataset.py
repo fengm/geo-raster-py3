@@ -69,7 +69,8 @@ class sr:
     def get_band(self, b):
         _b = self._band_no(self._inf, b)
         if _b not in self._bs:
-            raise Exception('failed to find band %s (%s) (%s)' % (b, _b, str(self._bs)))
+            logging.error('failed to find band %s (%s) (%s)' % (b, _b, str(self._bs)))
+            return None
 
         logging.info('loading TM band %s (%s)' % (b, _b))
         return self._load_band(_b)
