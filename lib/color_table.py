@@ -8,23 +8,6 @@ Description:
 
 import logging
 
-def to_dist(vs):
-    _w = float(sum([_v['dist'] for _v in vs]))
-
-    _ps = []
-    _cs = []
-
-    for _v in vs:
-        _w1 = (1.0 - _v['dist'] / _w)
-
-        _ps.append(_w1 * _v['pos'])
-        _cs.append([_w1 * _c for _c in _v['color']])
-
-    _p = int(sum(_ps))
-    _c = [int(sum([_c[_i] for _c in _cs])) for _i in range(4)]
-
-    return _p, _c
-
 def map_colortable(cs):
     from osgeo import gdal
 
@@ -40,14 +23,12 @@ class color_table:
 
     def __init__(self, ccs):
         _rs = ccs if isinstance(ccs, dict) else self._load_color_file(ccs)
-        _vs = sorted(_rs.keys())
-        _cs = [list(map(int, list(_rs[_v]) + ([] if len(_rs[_v]) > 3 else [255]))) for _v in _vs]
-
-        self._vs = _vs
-        self._rs = _rs
-        self._cs = _cs
-
-        self._color_table()
+        
+        for _r, _v in _rs.items():
+            if len(_v) == 3:
+                _rs[_r] = list(_v) + [255]
+                
+        self._colors = _rs
         
     def _load_qgis_colors(self, ls):
         _ls = ls[2:]
@@ -72,9 +53,10 @@ class color_table:
 
     def _load_color_file(self, f):
         import re
+        from gio import file_mag
 
         _colors = {}
-        with open(f) as _fi:
+        with open(file_mag.get(f).get()) as _fi:
             _ls = _fi.read().strip().splitlines()
             if len(_ls) == 0:
                 raise Exception('color table is empty')
@@ -109,68 +91,134 @@ class color_table:
 
         return tuple(_c)
 
-    def _color_table(self):
-        _vs = self._vs
-        _div = int(250 * 3.0 / len(_vs))
+    def write(self, f):
+        _ls = []
+        
+        _cs = self._colors
+        for _v in sorted(_cs.keys()):
+            _ls.append('%s\t%s' % (_v, ','.join(map(str, _cs[_v]))))
+        
+        from gio import file_unzip
+        with file_unzip.zip() as _zip:
+            _zip.save('\n'.join(_ls), f)
+            
+    def colors(self):
+        return self._colors
 
+    def ogr_color_table(self):
+        return map_colortable(self._colors)
+        
+class color_mapping:
+    
+    def __init__(self, cls, clip=False, color_num=256):
+        self._inp_colors = cls
+        self._clip = clip
+        self._color_num = color_num
+        
+        self._gen_color_table(self._inp_colors.colors())
+    
+    def _gen_color_table(self, rs):
+        _vs = list(sorted(rs.keys()))
+        _cs = [rs[_v] for _v in _vs]
+        
         _colors = {}
         _values = {}
 
-        _vs.append(_vs[-1])
-        for i in range(len(_vs) - 1):
-            _a = _vs[i]
-            _d = (_vs[i+1] - _vs[i]) / float(_div)
-
-            for _n in range(_div):
-                _v, _c = self._interpolate(_a)
-
-                if _v not in _values:
-                    _values[_a] = _v
-                    _colors[_v] = _c
-
-                _a += _d
+        _num = self._color_num
+        if len(_vs) == _num:
+            for _r in range(_num):
+                _values[_r] = _vs[_r]
+                _colors[_r] = _cs[_r]
                 
+        else:
+            _div = _num // (len(_vs) - 1)
+    
+            for i in range(len(_vs) - 1):
+                _a = _vs[i]
+                _d = (_vs[i+1] - _vs[i]) / float(_div)
+    
+                for _n in range(_div):
+                    _v, _c = self._interpolate(_vs, _cs, _a, _num, _div)
+    
+                    if _v not in _values:
+                        _values[_a] = _v
+                        _colors[_v] = _c
+    
+                    _a += _d
+                    
+            _v, _c = self._interpolate(_vs, _cs, _vs[-1], _num, _div)
+            
+            if _v not in _values:
+                _values[_a] = _v
+                _colors[_v] = _c
+
         self._values = _values
-        self._colors = _colors
+        self._colors = color_table(_colors)
 
         self._v_min = min(self._values.keys())
         self._v_max = max(self._values.keys())
 
-        if self._v_min < 0 or self._v_max >= 250:
-            raise Exception('only accept value range between 0 and 250')
+        if self._v_min < 0 or self._v_max > 255:
+            raise Exception('only accept value range between 0 and 255')
             
-    def _to_byte_colors(self, clip=False):
-        import math
+    def _to_dist(self, vs):
+        _w = float(sum([_v['dist'] for _v in vs]))
+
+        _ps = []
+        _cs = []
+
+        for _v in vs:
+            _w1 = (1.0 - _v['dist'] / _w)
+
+            _ps.append(_w1 * _v['pos'])
+            _cs.append([_w1 * _c for _c in _v['color']])
+
+        _p = int(sum(_ps))
+        _c = [int(sum([_c[_i] for _c in _cs])) for _i in range(4)]
+
+        return _p, _c
+
+    def _interpolate(self, vs, cs, v, n, div):
+        _vs = vs
+        _cs = cs
         
-        _cs = {}
-        for _c in range(int(self._v_min), int(math.ceil(self._v_max)) + 1):
-            _cs[_c] = self.get_color(_c, clip)
+        if v >= _vs[-1]:
+            return n-1, _cs[-1]
+
+        _v = max(min(_vs), min(v, max(_vs) - 0.000000000001))
+        _dv = div
+
+        _pp = 0.0
+        for _i in range(len(_vs) - 1):
+            _ds = abs(_v - _vs[_i])
+            _ps = int(_pp)
             
-        return _cs
+            if _ds < 0.00000000001:
+                return _ps, _cs[_i]
 
-    def write_file(self, f, clip=False):
-        _ls = []
-        
-        _cs = self._to_byte_colors(clip)
-        for _v in sorted(_cs.keys()):
-            _ls.append('%s\t%s' % (_v, ','.join(map(str, _cs[_v]))))
+            if _vs[_i] < _v < _vs[_i+1]:
+                _vv = []
 
-        with open(f, 'w') as _fo:
-            _fo.write('\n'.join(_ls))
+                _vv.append({'idx': _i, 'pos': _ps, 'value': _vs[_i], 'color': _cs[_i], 'dist': float(_ds)})
 
-    def ogr_color_table(self, clip=False):
-        return map_colortable(self._to_byte_colors(clip))
+                _ds = abs(_v - _vs[_i + 1])
+                _ps = int(_pp + _dv)
+                _vv.append({'idx': _i+1, 'pos': _ps, 'value': _vs[_i+1], 'color': _cs[_i+1], 'dist': float(_ds)})
 
-    def get_code(self, v, clip=False):
-        if v >= 255:
-            return 255
+                return self._to_dist(_vv)
+            else:
+                _pp += _dv
 
+        raise Exception('failed to find value %s' % v)
+
+    def get_code(self, v):
         if v < self._v_min:
-            if clip:
+            if self._clip:
                 return 255
             return self._values[self._v_min]
+            
         if v > self._v_max:
-            if clip:
+            if self._clip:
                 return 255
             return self._values[self._v_max]
 
@@ -184,46 +232,14 @@ class color_table:
         _cc = sorted(_vs, key=lambda x: x['d'])[0]['c']
         return _cc
 
-    def get_color(self, v, clip=False):
-        _c = self.get_code(v, clip)
+    def get_color(self, v):
+        _c = self.get_code(v)
 
-        if _c >= 255 or _c not in self._colors:
+        if _c >= 255 or _c not in self._colors._colors:
             return [0, 0, 0, 0]
 
-        return self._colors[_c]
-
-    def _interpolate(self, v):
-        _vs = self._vs
-        _cs = self._cs
-        
-        if v == _vs[-1]:
-            return v, _cs[-1]
-
-        _v = max(min(_vs), min(v, max(_vs) - 0.000000000001))
-        _dv = float(250) / (len(_vs) - 1)
-
-        _pp = 0.0
-        for _i in range(len(_vs) - 1):
-            _ds = abs(_v - _vs[_i])
-            _ps = int(_pp)
-
-            if _ds == 0:
-                return _ps, _cs[_i]
-
-            if _vs[_i] < _v < _vs[_i+1]:
-                _vv = []
-
-                _vv.append({'idx': _i, 'pos': _ps, 'value': _vs[_i], 'color': _cs[_i], 'dist': float(_ds)})
-
-                _ds = abs(_v - _vs[_i + 1])
-                _ps = int(_pp + _dv)
-                _vv.append({'idx': _i+1, 'pos': _ps, 'value': _vs[_i+1], 'color': _cs[_i+1], 'dist': float(_ds)})
-
-                return to_dist(_vv)
-            else:
-                _pp += _dv
-
-        raise Exception('failed to find value %s' % v)
-
+        return self._colors._colors[_c]
+    
 def load(f):
     return color_table(f).ogr_color_table()
+    
