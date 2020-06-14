@@ -81,6 +81,7 @@ cdef align_max(val, ref, div):
     import math
     return math.ceil((val - ref) / div) * div + ref
     
+
 def default_geotiff_opts():
     return ['predictor=2', 'tiled=yes', 'compress=lzw']
     
@@ -574,12 +575,12 @@ class geo_band_cache(geo_band_info):
             _bbb = geo_raster.open(_f_out).get_band().cache()
             bnd.data[_bbb.data != 1] = bnd.nodata
             
-    def colorize_byte(self, f):
+    def colorize_byte(self, f=None, interpolate=False):
         cdef np.ndarray[np.uint8_t, ndim=2] _dat = np.empty((self.height, self.width), dtype=np.uint8)
         _dat.fill(255)
         
         from gio import color_table
-        _ms = color_table.color_mapping(color_table.color_table(f))
+        _ms = color_table.color_mapping(color_table.color_table(self.color_table if f is None else f), interpolate=interpolate)
         _ks = sorted(_ms._values.keys())
         
         _idx = self.data != (self.nodata if self.nodata is not None else -9999)
@@ -593,12 +594,12 @@ class geo_band_cache(geo_band_info):
         
         return _out
         
-    def colorize_rgba(self, f):
+    def colorize_rgba(self, f=None, interpolate=False):
         _dat = np.empty((4, self.height, self.width), dtype=np.uint8)
         _dat.fill(0)
         
         from gio import color_table
-        _ms = color_table.color_mapping(color_table.color_table(f))
+        _ms = color_table.color_mapping(color_table.color_table(self.color_table if f is None else f), interpolate=interpolate)
         _ks = sorted(_ms._values.keys())
         
         _idx = self.data != (self.nodata if self.nodata is not None else -9999)
@@ -613,7 +614,15 @@ class geo_band_cache(geo_band_info):
             
         _out = self.from_grid(_dat)
         return _out
-
+        
+    def to_image(self):
+        if len(self.data.shape) != 3:
+            raise Exception('only support 3 dementions array')
+            
+        from PIL import Image
+        _dat = np.transpose(self.data, [1, 2, 0])
+        return Image.fromarray(_dat, 'RGBA')
+        
 class geo_band(geo_band_info):
     '''A raster band'''
 
@@ -1160,9 +1169,7 @@ class geo_raster(geo_raster_info):
     def save(self, fou, opts=[]):
         if fou.lower().endswith('.img'):
             driver = 'HFA'
-        
-        if fou.lower().endswith('.png'):
-            driver = 'PNG'
+            
 
         _bnd = self.get_band(1)
         _driver = gdal.GetDriverByName(driver)
@@ -1227,9 +1234,6 @@ def open(f, update=False):
 def write_raster(f, geo_transform, proj, img, pixel_type=gdal.GDT_Byte, driver='GTiff', nodata=None, color_table=None, opts=[]):
     if f.lower().endswith('.img'):
         driver = 'HFA'
-        
-    if f.lower().endswith('.png'):
-        driver = 'PNG'
         
     _opts = [] if opts is None else opts
     if driver == 'GTiff' and len(opts) == 0:

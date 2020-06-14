@@ -22,14 +22,31 @@ def map_colortable(cs):
 class color_table:
 
     def __init__(self, ccs):
-        _rs = ccs if isinstance(ccs, dict) else self._load_color_file(ccs)
+        _rs = self._load(ccs)
         
         for _r, _v in _rs.items():
             if len(_v) == 3:
                 _rs[_r] = list(_v) + [255]
                 
         self._colors = _rs
-        
+    
+    def _load(self, ccs):
+        if isinstance(ccs, dict):
+            return ccs
+            
+        if isinstance(ccs, str):
+            return self._load_color_file(ccs)
+            
+        from osgeo import gdal
+        if isinstance(ccs, gdal.ColorTable):
+            _cs = {}
+            for _c in range(ccs.GetCount()):
+                _cs[_c] = ccs.GetColorEntry(_c)
+                
+            return _cs
+            
+        raise Exception('failed to parse the colortable %s' % ccs)
+            
     def _load_qgis_colors(self, ls):
         _ls = ls[2:]
     
@@ -110,106 +127,92 @@ class color_table:
         
 class color_mapping:
     
-    def __init__(self, cls, clip=False, color_num=256):
+    def __init__(self, cls, interpolate=False, clip=False, color_num=255):
         self._inp_colors = cls
         self._clip = clip
         self._color_num = color_num
         
-        self._gen_color_table(self._inp_colors.colors())
+        self._gen_color_table(self._inp_colors.colors(), interpolate)
     
-    def _gen_color_table(self, rs):
+    def _gen_color_table(self, rs, interpolate):
+        import math
+        
         _vs = list(sorted(rs.keys()))
-        _cs = [rs[_v] for _v in _vs]
+        # _cs = [rs[_v] for _v in _vs]
         
         _colors = {}
         _values = {}
 
         _num = self._color_num
-        if len(_vs) == _num:
-            for _r in range(_num):
-                _values[_r] = _vs[_r]
-                _colors[_r] = _cs[_r]
+        if not interpolate or len(_vs) >= _num or len(_vs) < 2:
+            for _r in _vs:
+                _values[_r] = _r
+                _colors[_r] = rs[_r]
                 
         else:
-            _div = _num // (len(_vs) - 1)
-    
+            _div = float(_num - 1) / (len(_vs) - 1)
+            _pos = 0
+            
             for i in range(len(_vs) - 1):
+                _z = (_vs[i+1] - _vs[i])
+                if _z <= 0:
+                    continue
+                
+                _u = math.ceil(_div)
+                _d = _z / _u
                 _a = _vs[i]
-                _d = (_vs[i+1] - _vs[i]) / float(_div)
-    
-                for _n in range(_div):
-                    _v, _c = self._interpolate(_vs, _cs, _a, _num, _div)
-    
-                    if _v not in _values:
-                        _values[_a] = _v
-                        _colors[_v] = _c
+                
+                for _n in range(int(_u)):
+                    # _v, _c = self._interpolate(_vs, _cs, _a, _num, _div)
+                    _v, _c = self._interpolate_s(_vs[i], _vs[i+1], rs, _a, _pos)
+                    
+                    if _v > 0:
+                        _values[round(_a, 7)] = _pos
+                        _colors[_pos] = _c
+                        
+                        _pos = _v + _pos
     
                     _a += _d
                     
-            _v, _c = self._interpolate(_vs, _cs, _vs[-1], _num, _div)
+            _values[round(_a, 7)] = _pos
+            _colors[_pos] = rs[_vs[-1]]
             
-            if _v not in _values:
-                _values[_a] = _v
-                _colors[_v] = _c
-
+            _colors[255] = [0, 0, 0, 0]
+            
         self._values = _values
         self._colors = color_table(_colors)
 
         self._v_min = min(self._values.keys())
         self._v_max = max(self._values.keys())
 
-        if self._v_min < 0 or self._v_max > 255:
-            raise Exception('only accept value range between 0 and 255')
-            
-    def _to_dist(self, vs):
+    def _to_dist_s(self, vs):
         _w = float(sum([_v['dist'] for _v in vs]))
-
-        _ps = []
+        
         _cs = []
-
         for _v in vs:
             _w1 = (1.0 - _v['dist'] / _w)
-
-            _ps.append(_w1 * _v['pos'])
             _cs.append([_w1 * _c for _c in _v['color']])
-
-        _p = int(sum(_ps))
-        _c = [int(sum([_c[_i] for _c in _cs])) for _i in range(4)]
-
-        return _p, _c
-
-    def _interpolate(self, vs, cs, v, n, div):
-        _vs = vs
-        _cs = cs
         
-        if v >= _vs[-1]:
-            return n-1, _cs[-1]
+        _c = [int(sum([_c[_i] for _c in _cs])) for _i in range(4)]
+        return _c
 
-        _v = max(min(_vs), min(v, max(_vs) - 0.000000000001))
-        _dv = div
-
-        _pp = 0.0
-        for _i in range(len(_vs) - 1):
-            _ds = abs(_v - _vs[_i])
-            _ps = int(_pp)
+    def _interpolate_s(self, v_min, v_max, cs, v, n):
+        if v >= v_max:
+            print(v, v_max)
+            raise Exception('higher than the upper range')
+        
+        if v <= v_min:
+            return 1, cs[v_min]
             
-            if _ds < 0.00000000001:
-                return _ps, _cs[_i]
+        _vv = []
+        _ds = abs(v - v_min)
+        if _ds < 0.00000000001:
+            return 1, cs[v_min]
 
-            if _vs[_i] < _v < _vs[_i+1]:
-                _vv = []
+        _vv.append({'color': cs[v_min], 'dist': float(_ds)})
+        _vv.append({'color': cs[v_max], 'dist': float(abs(v - v_max))})
 
-                _vv.append({'idx': _i, 'pos': _ps, 'value': _vs[_i], 'color': _cs[_i], 'dist': float(_ds)})
-
-                _ds = abs(_v - _vs[_i + 1])
-                _ps = int(_pp + _dv)
-                _vv.append({'idx': _i+1, 'pos': _ps, 'value': _vs[_i+1], 'color': _cs[_i+1], 'dist': float(_ds)})
-
-                return self._to_dist(_vv)
-            else:
-                _pp += _dv
-
-        raise Exception('failed to find value %s' % v)
+        return 1, self._to_dist_s(_vv)
 
     def get_code(self, v):
         if v < self._v_min:
