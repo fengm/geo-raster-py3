@@ -953,3 +953,16 @@ def output_polygons(polys, f_shp):
     logging.debug('output polygon to ' + f_shp)
     output_geometries([_poly.poly for _poly in polys], polys[0].proj, ogr.wkbPolygon, f_shp)
 
+def load_shp(f, layer_name=None):
+    from osgeo import ogr
+    
+    _shp = ogr.Open(f)
+    _lyr = _shp.GetLayer(layer_name) if layer_name else _shp.GetLayer()
+    
+    from gio import geo_base as gb
+    for _r in _lyr:
+        _p = gb.geo_polygon(_r.geometry())
+        _s = _r.items()
+        yield _p, _s
+        
+    del _lyr, _shp
