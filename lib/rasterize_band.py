@@ -11,7 +11,7 @@ Date: 2013-11-15 09:48:11
 Note: Added the function for detecting the polygon extent for a Landsat scene
 '''
 
-def rasterize_polygons(bnd, polys, f_img, f_shp):
+def rasterize_polygons(bnd, polys, f_img, f_shp, touched=True):
     '''rasterize ploygon to match a raster band'''
     from osgeo import ogr, gdal
     import os
@@ -26,17 +26,18 @@ def rasterize_polygons(bnd, polys, f_img, f_shp):
 
     for _poly in polys:
         _fea = ogr.Feature(_lyr.GetLayerDefn())
-        _fea.SetGeometry(polys.poly)
+        _fea.SetGeometry(_poly.poly)
         _lyr.CreateFeature(_fea)
         _fea.Destroy()
 
     from . import geo_raster as ge
     _img = ge.geo_raster.create(f_img, [bnd.height, bnd.width], bnd.geo_transform, bnd.proj.ExportToWkt())
-
-    gdal.RasterizeLayer(_img.raster, [1], _lyr, burn_values=[1])
+    
+    print('touched', touched)
+    gdal.RasterizeLayer(_img.raster, [1], _lyr, burn_values=[1], options=['ALL_TOUCHED=TRUE'] if touched else [])
     return _img
 
-def rasterize_polygon(bnd, poly, f_img, f_shp):
+def rasterize_polygon(bnd, poly, f_img, f_shp, touched=True):
     '''rasterize ploygon to match a raster band'''
     from osgeo import ogr, gdal
     import os
@@ -57,7 +58,7 @@ def rasterize_polygon(bnd, poly, f_img, f_shp):
     from . import geo_raster as ge
     _img = ge.geo_raster.create(f_img, [bnd.height, bnd.width], bnd.geo_transform, bnd.proj.ExportToWkt())
 
-    gdal.RasterizeLayer(_img.raster, [1], _lyr, burn_values=[1])
+    gdal.RasterizeLayer(_img.raster, [1], _lyr, burn_values=[1], options=['ALL_TOUCHED=TRUE'] if touched else [])
     return _img
 
 def rasterize_band(bnd, poly, f_img, f_shp):
@@ -122,13 +123,19 @@ def detect_landsat_extent(bnd):
 
     return _pol
 
-def to_mask(bnd, poly, f_img=None, f_shp=None):
+def to_mask(bnd, poly, f_img=None, f_shp=None, touched=True):
     from gio import file_unzip
     with file_unzip.zip() as _zip:
         _f_img = f_img if f_img else _zip.generate_file('', '.img')
         _f_shp = f_shp if f_shp else _zip.generate_file('', '.shp')
-
-        return rasterize_polygon(bnd, poly.project_to(bnd.proj), _f_img, _f_shp).get_band().cache()
+        
+        if isinstance(poly, list) or isinstance(poly, tuple):
+            _ps = poly
+        else:
+            _ps = [poly]
+        
+        _ps = [_p.project_to(bnd.proj) for _p in _ps]
+        return rasterize_polygons(bnd, _ps, _f_img, _f_shp, touched).get_band().cache()
 
 def to_raster(poly, cell, ceil=True):
     import math
@@ -145,19 +152,19 @@ def to_raster(poly, cell, ceil=True):
     from gio import geo_raster as ge
     return ge.geo_band_info(_geo, _col, _row, poly.proj)
    
-def mask(bnd, poly):
+def mask(bnd, poly, touched=True):
     if bnd.nodata is None:
         raise Exception('nodata needs to be set for the input raster')
         
-    _b = to_mask(bnd, poly)
+    _b = to_mask(bnd, poly, touched=touched)
     bnd.data[_b.data != 1] = bnd.nodata
     return bnd
 
-def extract(bnd, poly, cell, ceil=True):
+def extract(bnd, poly, cell, ceil=True, touched=True):
     if bnd.nodata is None:
         raise Exception('nodata needs to be set for the input raster')
         
-    _b = to_mask(to_raster(poly, cell, ceil), poly)
+    _b = to_mask(to_raster(poly, cell, ceil), poly, touched=touched)
     _o = bnd.read_block(_b)
     _o.data[_b.data != 1] = _o.nodata
     return _o
