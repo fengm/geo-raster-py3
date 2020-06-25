@@ -29,11 +29,13 @@ def rasterize_polygons(bnd, polys, f_img, f_shp, touched=True):
         _fea.SetGeometry(_poly.poly)
         _lyr.CreateFeature(_fea)
         _fea.Destroy()
-
+        
     from . import geo_raster as ge
     _img = ge.geo_raster.create(f_img, [bnd.height, bnd.width], bnd.geo_transform, bnd.proj.ExportToWkt())
     
     gdal.RasterizeLayer(_img.raster, [1], _lyr, burn_values=[1], options=['ALL_TOUCHED=TRUE'] if touched else [])
+    del _lyr, _shp, _drv
+
     return _img
 
 def rasterize_polygon(bnd, poly, f_img, f_shp, touched=True):
@@ -58,6 +60,8 @@ def rasterize_polygon(bnd, poly, f_img, f_shp, touched=True):
     _img = ge.geo_raster.create(f_img, [bnd.height, bnd.width], bnd.geo_transform, bnd.proj.ExportToWkt())
 
     gdal.RasterizeLayer(_img.raster, [1], _lyr, burn_values=[1], options=['ALL_TOUCHED=TRUE'] if touched else [])
+    del _lyr, _shp, _drv
+    
     return _img
 
 def rasterize_band(bnd, poly, f_img, f_shp):
