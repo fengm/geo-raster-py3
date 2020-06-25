@@ -33,7 +33,6 @@ def rasterize_polygons(bnd, polys, f_img, f_shp, touched=True):
     from . import geo_raster as ge
     _img = ge.geo_raster.create(f_img, [bnd.height, bnd.width], bnd.geo_transform, bnd.proj.ExportToWkt())
     
-    print('touched', touched)
     gdal.RasterizeLayer(_img.raster, [1], _lyr, burn_values=[1], options=['ALL_TOUCHED=TRUE'] if touched else [])
     return _img
 
