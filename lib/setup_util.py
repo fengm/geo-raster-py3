@@ -19,9 +19,10 @@ def _parse_opts():
     sys.argv = [_p for _p in _as if _p not in _pp]
     return _ps
 
-def init(tag):
+def init(tag, version=1.0, requires=[], author='Min Feng', email='mfeng.geo@gmail.com'):
     import setuptools
-    from Cython.Distutils import build_ext
+    # from Cython.Distutils import build_ext
+    from setuptools.command.build_ext import build_ext
     import os
     import numpy
 
@@ -64,15 +65,14 @@ def init(tag):
         _ps.append(_package)
         _ds[_package] = 'lib'
 
-    setuptools.setup(name=_package, version='1.0', description='', \
-            author='Min Feng', author_email='mfeng.geo@gmail.com', \
-            # packages=[_package, 'gio/data/landsat'],
-            # package_dir={_package: 'lib', 'gio/data/landsat': 'lib/data/landsat'},
+    setuptools.setup(name=_package, version=version, description='', \
+            author=author, author_email=email, \
             packages=_ps,
             package_dir=_ds,
             # package_data={_package: ['etc/*']},
             # include_package_data=True,
             cmdclass = {"build_ext": build_ext},
+    		install_requires=requires,
             ext_modules=_ms,
             scripts=_ss,
             )

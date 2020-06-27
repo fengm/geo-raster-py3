@@ -26,8 +26,7 @@ Description: class defined to facility object use
 class obj(object):
 
 	def __init__(self, meta=None):
-		import collections
-		self._meta = collections.OrderedDict() if not meta else meta
+		self._meta = {} if not meta else meta
 
 	def __getitem__(self, idx):
 		from . import config
@@ -111,9 +110,7 @@ def load(f):
 		return _obj
 
 def _to_obj_ex(v):
-	import collections
-	_ds = collections.OrderedDict()
-
+	_ds = {}
 	for _k, _v in v:
 		_ds[_k.strip()] = _v.strip if _v is str else _v
 
