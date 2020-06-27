@@ -953,15 +953,22 @@ def output_polygons(polys, f_shp):
     logging.debug('output polygon to ' + f_shp)
     output_geometries([_poly.poly for _poly in polys], polys[0].proj, ogr.wkbPolygon, f_shp)
 
-def load_shp(f, layer_name=None):
+def load_shp(f, ext=None, layer_name=None):
     from osgeo import ogr
     
     _shp = ogr.Open(f)
     _lyr = _shp.GetLayer(layer_name) if layer_name else _shp.GetLayer()
     
+    if ext:
+        _lyr.SetSpatialFilter(ext.project_to(_lyr.GetSpatialRef()).poly)
+        
     from gio import geo_base as gb
     for _r in _lyr:
-        _p = gb.geo_polygon(_r.geometry())
+        _g = _r.geometry()
+        if _g is None:
+            continue
+
+        _p = gb.geo_polygon(_g.Clone())
         _s = _r.items()
         yield _p, _s
         
