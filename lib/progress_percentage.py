@@ -15,7 +15,7 @@ import datetime, logging, sys
 
 class progress_percentage:
 
-    def __init__(self, size, title=None, step=100, txt_format='%(p)3d%%', bar=False, min_perc_step=None):
+    def __init__(self, size, title=None, step=100, txt_format='%(p)3d%%', bar=False, perc_step=None):
         self.pos = 0
         self.cur = -1
         self.size = size
@@ -25,8 +25,12 @@ class progress_percentage:
 
         from . import config
         _debug = config.getboolean('conf', 'debug')
+        
+        _step = 1 if _debug else config.getfloat('conf', 'progress_step', 10)
+        if perc_step is not None:
+            _step = perc_step
 
-        self.min_perc_step = min_perc_step if (min_perc_step is not None) else (1 if _debug else 10)
+        self.min_perc_step = _step
 
         self.title = title
         self.bar = bar
