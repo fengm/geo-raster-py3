@@ -59,7 +59,7 @@ class color_table:
                 continue
     
             _cc = tuple(map(int, _vv[1:5]))
-            _cs[int(_vv[0])] = _cc
+            _cs[float(_vv[0])] = _cc
     
             _n += 1
     
