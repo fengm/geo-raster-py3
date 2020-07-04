@@ -188,6 +188,12 @@ def set(section, name, val):
 def _set(section, name, val):
     _cfg = _get_cfg()
 
+    # set the value to None is to delete the option
+    if val is None:
+        if _cfg.has_option(section, name):
+            _cfg.remove_option(section, name)
+        return
+
     if _cfg.has_section(section) == False:
         _cfg.add_section(section)
 
