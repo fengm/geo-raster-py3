@@ -812,7 +812,7 @@ class geo_band_stack_zip:
         if not _finp:
             raise Exception('no valid file path provide %s' % _finp)
             
-        if not os.path.exists(_finp):
+        if _finp.startswith('/') and (not os.path.exists(_finp)):
             raise Exception('failed to find %s' % _finp)
 
         _bnds = []
