@@ -163,7 +163,8 @@ class tile:
                 'cell_size': self.cell_size,
                 'col': self.col,
                 'row': self.row,
-                'files': self.files,
+                # 'files': self.files,
+                'files': len(self.files),
                 'params': self.params,
                 'tag': self.tag,
                 'edge': self.edge,
@@ -291,9 +292,13 @@ def save(rs, f_out, ms=None):
         with open(_f_tmp, 'w') as _f:
             _ms = ms if ms else {}
             _ms['version'] = '2.0'
+            _ms['tile_num'] = len(_rs)
 
-            _gs = {'params': _ms, 'tiles': _rs}
-            json.dump(_gs, _f)
+            _gs = {}
+            _gs['params'] = _ms
+            _gs['tiles'] = _rs
+
+            json.dump(_gs, _f, indent=1, ensure_ascii=False)
 
         _f_out.put(_f_tmp)
 
