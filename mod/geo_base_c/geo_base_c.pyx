@@ -668,12 +668,12 @@ class geo_polygon:
                 _pt = geo_point(_p[0], _p[1], self.proj)
                 if proj is not None:
                     _pt = _pt.project_to(proj)
-                
+
                 if _pt is None:
                     continue
 
                 _ps.append(_pt)
-        
+
         return _ps
 
 class geo_point:
@@ -864,7 +864,7 @@ class projection_transform:
         cdef float _mat_11x = _mat[_row1][_col1][2]
 
         if _mat_00x >= _inf or _mat_01x >= _inf or _mat_10x >= _inf or _mat_11x >= _inf:
-            # print _inf, _mat_00x, _mat_01x, _mat_10x, _mat_11x 
+            # print _inf, _mat_00x, _mat_01x, _mat_10x, _mat_11x
             # print _mat_00x >= _inf, _mat_01x >= _inf, _mat_10x >= _inf, _mat_11x >= _inf
 
             raise Exception('exceeded the projection extent')
@@ -904,6 +904,11 @@ def proj_from_epsg(code=4326):
     _proj = osr.SpatialReference()
     _proj.ImportFromEPSG(code)
 
+    if code == 4326:
+        import osgeo
+        if int(osgeo.__version__[0]) >= 3:
+            _proj.SetAxisMappingStrategy(osgeo.osr.OAMS_TRADITIONAL_GIS_ORDER)
+
     return _proj
 
 def output_geometries(geos, proj, geo_type, f_shp):
@@ -915,9 +920,9 @@ def output_geometries(geos, proj, geo_type, f_shp):
         _drv_type = 'KML'
     if f_shp.lower().endswith('.geojson'):
         _drv_type = 'GeoJSON'
-        
+
     logging.info('output shapefile to %s (%s)' % (f_shp, _drv_type))
-    
+
     _drv = ogr.GetDriverByName(_drv_type)
     if os.path.exists(f_shp):
         _drv.DeleteDataSource(f_shp)
@@ -926,7 +931,7 @@ def output_geometries(geos, proj, geo_type, f_shp):
     if _shp is None:
         logging.error('failed to create file %s' % f_shp)
         return
-    
+
     _tag = os.path.splitext(os.path.basename(f_shp))[0]
     _lyr = _shp.CreateLayer(_tag, proj, geo_type)
     if _shp is None:
@@ -955,13 +960,13 @@ def output_polygons(polys, f_shp):
 
 def load_shp(f, ext=None, layer_name=None):
     from osgeo import ogr
-    
+
     _shp = ogr.Open(f)
     _lyr = _shp.GetLayer(layer_name) if layer_name else _shp.GetLayer()
-    
+
     if ext:
         _lyr.SetSpatialFilter(ext.project_to(_lyr.GetSpatialRef()).poly)
-        
+
     from gio import geo_base as gb
     for _r in _lyr:
         _g = _r.geometry()
@@ -971,5 +976,5 @@ def load_shp(f, ext=None, layer_name=None):
         _p = gb.geo_polygon(_g.Clone())
         _s = _r.items()
         yield _p, _s
-        
+
     del _lyr, _shp
