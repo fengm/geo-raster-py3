@@ -136,12 +136,11 @@ def load(f):
         import json
         # import collections
         # _obj = json.load(_fi, object_hook=_to_obj, object_pairs_hook=collections.OrderedDict)
-        _obj = json.load(_fi, object_pairs_hook=_to_obj_ex)
+        _obj = json.load(_fi, object_hook=_to_obj, object_pairs_hook=metadata)
         return _obj
 
 def _to_obj_ex(v):
-    import collections
-    _ds = collections.OrderedDict()
+    _ds = {}
 
     for _k, _v in v:
         _ds[_k.strip()] = _v.strip if _v is str else _v
